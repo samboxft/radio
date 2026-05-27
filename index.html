@@ -324,18 +324,46 @@ let activeGenre=null, userStarted_=false;
 let dailyTrack=null; // { url, title, artist, mood, tags, generated }
 
 // ═══════════════════════════════════════════════════════
-//  PERSISTENCE
+//  PERSISTENCE — 24-hour no-repeat system
 // ═══════════════════════════════════════════════════════
+function todayKey() { return new Date().toDateString(); }
+
 function loadPlayed() {
   try {
     const s = JSON.parse(localStorage.getItem('wv_played')||'{}');
-    if(s.date === new Date().toDateString()) playedToday = new Set(s.ids||[]);
+    if(s.date === todayKey()) playedToday = new Set(s.ids||[]);
     else { playedToday=new Set(); savePlayed(); }
   } catch { playedToday=new Set(); }
 }
 function savePlayed() {
-  try { localStorage.setItem('wv_played', JSON.stringify({date:new Date().toDateString(),ids:[...playedToday]})); } catch{}
+  try { localStorage.setItem('wv_played', JSON.stringify({date:todayKey(),ids:[...playedToday]})); } catch{}
 }
+
+// Mark a song as played immediately when it loads (not just when it starts)
+// so skipping forward doesn't let it loop back in
+function markPlayed(song) {
+  if(!song) return;
+  playedToday.add(song.id);
+  savePlayed();
+}
+
+// Check if we've crossed midnight since last load; reset if so
+function checkMidnightReset() {
+  try {
+    const s = JSON.parse(localStorage.getItem('wv_played')||'{}');
+    if(s.date && s.date !== todayKey()) {
+      playedToday = new Set();
+      savePlayed();
+      // Rebuild queue with full fresh pool after reset
+      queue = buildQueue(activeGenre);
+      currentIdx = 0;
+      console.log('[Wavelength] Midnight reset — all songs available again');
+    }
+  } catch {}
+}
+
+// Run midnight check every minute
+setInterval(checkMidnightReset, 60000);
 function loadMubertPat() {
   try { return localStorage.getItem('wv_mubert_pat')||''; } catch{ return ''; }
 }
@@ -349,13 +377,51 @@ function saveMubertPat() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  QUEUE / TRACK SELECTION
+//  QUEUE / TRACK SELECTION — strict 24h no-repeat
 // ═══════════════════════════════════════════════════════
 function buildQueue(genre) {
-  let pool = genre ? SONGS.filter(s=>s.genre===genre||s.tags.some(t=>t.toLowerCase().includes(genre.toLowerCase()))) : [...SONGS];
-  if(pool.length<3) pool=[...SONGS];
-  const fresh = pool.filter(s=>!playedToday.has(s.id));
-  return (fresh.length>3?fresh:pool).sort(()=>Math.random()-.5);
+  // Always sync playedToday from storage first (handles multi-tab)
+  loadPlayed();
+
+  let pool = genre
+    ? SONGS.filter(s => s.genre===genre || s.tags.some(t=>t.toLowerCase().includes(genre.toLowerCase())))
+    : [...SONGS];
+
+  // Safety: if genre filter leaves too few, widen to all songs
+  if(pool.length < 2) pool = [...SONGS];
+
+  // Remove every song played today — strict, no fallback to played songs
+  const fresh = pool.filter(s => !playedToday.has(s.id));
+
+  if(fresh.length === 0) {
+    // Truly exhausted — all songs in this genre played today.
+    // Widen to full library excluding played, so we never repeat.
+    const globalFresh = SONGS.filter(s => !playedToday.has(s.id));
+
+    if(globalFresh.length === 0) {
+      // Every single song in the library has been played today.
+      // This means ~34 unique songs have all played — great session!
+      // Reset playedToday so the station can keep running.
+      console.log('[Wavelength] Full library exhausted for today — resetting play history for continued listening');
+      playedToday = new Set();
+      savePlayed();
+      showExhaustedBanner();
+      return [...SONGS].sort(() => Math.random() - .5);
+    }
+
+    return globalFresh.sort(() => Math.random() - .5);
+  }
+
+  return fresh.sort(() => Math.random() - .5);
+}
+
+function showExhaustedBanner() {
+  // Brief toast: "You've heard everything today — reshuffling!"
+  const toast = document.createElement('div');
+  toast.textContent = '🎉 You\'ve heard every track today — reshuffling the full library!';
+  toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:13px;padding:10px 20px;border-radius:20px;z-index:999;font-family:var(--font)';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 5000);
 }
 
 function emojiForGenre(g) {
@@ -386,7 +452,6 @@ function onPState(e) {
     isPlaying=true; setPlayIcon(true);
     document.getElementById('ytOverlay').classList.add('hidden');
     startProg();
-    if(queue[currentIdx]) { playedToday.add(queue[currentIdx].id); savePlayed(); }
     renderRecent();
   } else if(e.data===YT.PlayerState.PAUSED) {
     isPlaying=false; setPlayIcon(false);
@@ -410,12 +475,28 @@ function togglePlay() {
 }
 function nextTrack() {
   currentIdx++;
-  if(currentIdx>=queue.length) { queue=buildQueue(activeGenre); currentIdx=0; }
+  // If we've reached the end of the current queue, rebuild
+  // buildQueue will exclude everything in playedToday automatically
+  if(currentIdx >= queue.length) {
+    queue = buildQueue(activeGenre);
+    currentIdx = 0;
+  }
+  // Skip any song already played today that snuck into the queue
+  // (handles edge case of queue built before a song was marked)
+  while(queue[currentIdx] && playedToday.has(queue[currentIdx].id) && currentIdx < queue.length - 1) {
+    currentIdx++;
+  }
+  if(queue[currentIdx]) loadTrack(queue[currentIdx]);
+}
+function prevTrack() {
+  // Previous just rewinds — doesn't re-mark as unplayed
+  currentIdx = Math.max(0, currentIdx - 1);
   loadTrack(queue[currentIdx]);
 }
-function prevTrack() { currentIdx=Math.max(0,currentIdx-1); loadTrack(queue[currentIdx]); }
 function loadTrack(song) {
-  if(!playerReady||!song) return;
+  if(!playerReady || !song) return;
+  // Mark played immediately on load — prevents re-queuing even if skipped
+  markPlayed(song);
   player.loadVideoById(song.id);
   renderTrack(song); renderQueue(); speakIntro(song);
 }
@@ -441,11 +522,15 @@ function setPlayIcon(p) {
     ? '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>'
     : '<polygon points="5,3 19,12 5,21"/>';
 }
-function jumpTo(i) { currentIdx=i; loadTrack(queue[i]); }
 function setGenre(g) {
   activeGenre = activeGenre===g ? null : g;
   queue=buildQueue(activeGenre); currentIdx=0;
   loadTrack(queue[0]); renderGenreGrid();
+}
+
+function jumpTo(i) {
+  currentIdx = i;
+  loadTrack(queue[i]);
 }
 
 // ═══════════════════════════════════════════════════════
