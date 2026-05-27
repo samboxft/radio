@@ -1,0 +1,44 @@
+services:
+  icecast:
+    image: moul/icecast:2.4.4
+    container_name: radio-icecast
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config/icecast.xml:/etc/icecast2/icecast.xml:ro
+      - ./assets:/srv/radio/assets:ro
+
+  liquidsoap:
+    image: savonet/liquidsoap:v2.3.3
+    container_name: radio-liquidsoap
+    restart: unless-stopped
+    depends_on:
+      - icecast
+    volumes:
+      - ./liquidsoap/radio.liq:/radio/radio.liq:ro
+      - ./assets:/srv/radio/assets:ro
+    command: ["/radio/radio.liq"]
+
+  orchestrator:
+    build:
+      context: ./orchestrator
+    container_name: radio-orchestrator
+    restart: unless-stopped
+    depends_on:
+      - liquidsoap
+    environment:
+      - TZ=UTC
+      - LIQUIDSOAP_CONTROL_URL=http://liquidsoap:8080
+      - NEWS_WORD_TARGET=730
+    ports:
+      - "8088:8088"
+
+  web:
+    image: nginx:1.27-alpine
+    container_name: radio-web
+    restart: unless-stopped
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    ports:
+      - "8081:80"

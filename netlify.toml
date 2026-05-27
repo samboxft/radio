@@ -1,0 +1,8 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/api/gemini-intro"
+  to = "/.netlify/functions/gemini-intro"
+  status = 200
+  force = true
