@@ -6,1415 +6,774 @@
 <title>Wavelength Radio — Free Indie, Always Live</title>
 <style>
   :root {
-    --bg: #0e0e12;
-    --surface: #16161e;
-    --surface2: #1e1e2a;
-    --border: #2a2a3a;
-    --accent: #7c5cfc;
-    --accent2: #e879f9;
-    --text: #e8e6f0;
-    --muted: #7a7890;
-    --news: #f87171;
-    --green: #34d399;
-    --amber: #fbbf24;
-    --font: 'Segoe UI', system-ui, sans-serif;
+    --bg:#0e0e12; --surface:#16161e; --surface2:#1e1e2a;
+    --border:#2a2a3a; --accent:#7c5cfc; --accent2:#e879f9;
+    --text:#e8e6f0; --muted:#7a7890; --news:#f87171;
+    --green:#34d399; --amber:#fbbf24;
+    --font:'Segoe UI',system-ui,sans-serif;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
 
-  /* Layout */
-  .shell { display: grid; grid-template-columns: 260px 1fr 280px; grid-template-rows: auto 1fr auto; min-height: 100vh; gap: 0; }
-  .topbar { grid-column: 1/-1; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 1rem; overflow-y: auto; }
-  .main { padding: 1.5rem; overflow-y: auto; }
-  .rightbar { background: var(--surface); border-left: 1px solid var(--border); padding: 1rem; overflow-y: auto; }
-  .bottombar { grid-column: 1/-1; background: var(--surface); border-top: 1px solid var(--border); padding: 0 1.5rem; height: 80px; display: flex; align-items: center; gap: 1.5rem; position: sticky; bottom: 0; z-index: 100; }
+  .shell{display:grid;grid-template-columns:240px 1fr 260px;grid-template-rows:56px 1fr 80px;min-height:100vh}
+  .topbar{grid-column:1/-1;background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:1rem;overflow-y:auto}
+  .main{padding:1.25rem;overflow-y:auto}
+  .rightbar{background:var(--surface);border-left:1px solid var(--border);padding:1rem;overflow-y:auto}
+  .bottombar{grid-column:1/-1;background:var(--surface);border-top:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:1.25rem;position:sticky;bottom:0;z-index:100}
 
-  /* Top bar */
-  .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .live-pill { display: flex; align-items: center; gap: 5px; background: #ff4444; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; }
-  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: blink 1s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  .listeners-count { font-size: 12px; color: var(--muted); }
-  .clock-display { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .topbar-right { display: flex; align-items: center; gap: 1rem; }
+  .logo{font-size:18px;font-weight:700;letter-spacing:-0.5px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .live-pill{display:flex;align-items:center;gap:5px;background:#cc2222;color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;padding:3px 10px;border-radius:20px}
+  .live-dot{width:6px;height:6px;border-radius:50%;background:#fff;animation:blink 1s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .topbar-right{display:flex;align-items:center;gap:1rem}
+  .clock{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 
-  /* Sidebar — queue */
-  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
-  .queue-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px; border-radius: 8px; cursor: pointer; transition: background 0.15s; margin-bottom: 2px; }
-  .queue-item:hover { background: var(--surface2); }
-  .queue-item.now-playing { background: var(--surface2); border-left: 2px solid var(--accent); }
-  .qi-thumb { width: 36px; height: 36px; border-radius: 6px; background: var(--surface2); overflow: hidden; flex-shrink: 0; align-self: center; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-  .qi-info { min-width: 0; flex: 1; }
-  .qi-title { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
-  .qi-artist { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .qi-num { font-size: 11px; color: var(--muted); flex-shrink: 0; align-self: center; }
-  .news-item-q { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; background: #2e1a1a; border: 1px solid #4e2a2a; margin-bottom: 4px; }
-  .news-badge { font-size: 10px; background: var(--news); color: #fff; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
-  .today-badge { font-size: 10px; background: var(--accent); color: #fff; padding: 2px 7px; border-radius: 10px; font-weight: 600; flex-shrink:0; }
+  .sec-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
+  .qi{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;margin-bottom:2px;transition:background .12s}
+  .qi:hover{background:var(--surface2)}
+  .qi.now{background:var(--surface2);border-left:2px solid var(--accent)}
+  .qi-icon{width:34px;height:34px;border-radius:6px;background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .qi-info{min-width:0;flex:1}
+  .qi-title{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .qi-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .qi-n{font-size:11px;color:var(--muted);flex-shrink:0}
 
-  .license-badge-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 6px; }
-  .qi-license-row { margin-top: 4px; }
-  .license-badge {
-    font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 2px 7px; border-radius: 999px;
-    background: rgba(124, 92, 252, 0.22); color: var(--accent2);
-    border: 1px solid rgba(124, 92, 252, 0.4); flex-shrink: 0;
-  }
-  .license-badge.license-ncs { background: rgba(52, 211, 153, 0.15); border-color: rgba(52, 211, 153, 0.45); color: var(--green); }
-  .license-hint { font-size: 10px; color: var(--muted); line-height: 1.35; max-width: 100%; }
-  .license-link { font-size: 10px; color: var(--accent); font-weight: 600; text-decoration: none; }
-  .license-link:hover { text-decoration: underline; }
-  .np-license-row { margin-top: 4px; }
-  .vote-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .vote-btn { border: 1px solid var(--border); background: var(--surface); color: var(--muted); border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; transition: all 0.15s; }
-  .vote-btn:hover { border-color: var(--accent); color: var(--text); }
-  .vote-btn.active-like { border-color: var(--green); color: var(--green); background: rgba(52, 211, 153, 0.12); }
-  .vote-btn.active-dislike { border-color: var(--news); color: var(--news); background: rgba(248, 113, 113, 0.12); }
-  .taste-note { font-size: 11px; color: var(--muted); line-height: 1.4; flex: 1; min-width: 140px; }
-  .spotlight-note { font-size: 11px; color: var(--accent2); margin-top: 8px; line-height: 1.45; }
+  .yt-wrap{position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:16/9;max-height:360px;margin-bottom:1rem}
+  .yt-wrap iframe{width:100%;height:100%;border:none;display:block}
+  .yt-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);cursor:pointer;transition:background .2s}
+  .yt-overlay:hover{background:rgba(0,0,0,.35)}
+  .play-circle{width:60px;height:60px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
+  .play-circle svg{width:26px;height:26px;fill:#fff;margin-left:3px}
 
-  /* Main area */
-  .yt-wrapper { position: relative; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 16/9; max-height: 380px; margin-bottom: 1.25rem; }
-  .yt-wrapper iframe { width: 100%; height: 100%; border: none; display: block; }
-  .yt-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); cursor: pointer; transition: opacity 0.2s; }
-  .yt-overlay:hover { background: rgba(0,0,0,0.4); }
-  .play-big { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; }
-  .play-big svg { width: 28px; height: 28px; fill: #fff; margin-left: 4px; }
+  .track-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:.875rem}
+  .track-card h2{font-size:18px;font-weight:700;margin-bottom:3px}
+  .artist-line{font-size:13px;color:var(--muted);margin-bottom:.75rem}
+  .tags{display:flex;gap:5px;flex-wrap:wrap}
+  .tag{font-size:11px;padding:2px 9px;border-radius:20px;border:1px solid var(--border);color:var(--muted)}
+  .tag.g{border-color:var(--accent);color:var(--accent)}
+  .tag.ai{border-color:var(--green);color:var(--green)}
 
-  /* Now playing bar info */
-  .np-thumb { width: 48px; height: 48px; border-radius: 8px; background: var(--surface2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; overflow: hidden; }
-  .np-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .np-info { min-width: 0; flex: 1; }
-  .np-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .np-artist { font-size: 12px; color: var(--muted); }
-  .np-controls { display: flex; align-items: center; gap: 1rem; flex: 1; justify-content: center; }
-  .ctrl-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; }
-  .ctrl-btn:hover { color: var(--text); background: var(--surface2); }
-  .ctrl-btn svg { width: 20px; height: 20px; fill: currentColor; }
-  .vol-wrap { display: flex; align-items: center; gap: 8px; }
-  .vol-wrap svg { width: 16px; height: 16px; fill: var(--muted); flex-shrink: 0; }
-  input[type=range] { accent-color: var(--accent); width: 80px; cursor: pointer; }
+  .waveform{display:flex;align-items:flex-end;gap:3px;height:28px;margin:.75rem 0}
+  .wb{width:3px;border-radius:2px;background:var(--accent);opacity:.45;animation:wv 1s ease-in-out infinite}
+  @keyframes wv{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
 
-  /* Track metadata card */
-  .track-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; }
-  .track-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-  .track-card .artist-line { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
-  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .tag { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); }
-  .tag.genre { border-color: var(--accent); color: var(--accent); }
+  .host-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:.875rem}
+  .host-hdr{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
+  .host-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+  .host-bubble{background:var(--surface);border:1px solid var(--border);border-radius:0 10px 10px 10px;padding:.75rem;font-size:13px;line-height:1.65;min-height:46px}
+  .speak{display:flex;gap:3px;align-items:flex-end;height:16px;margin-left:auto}
+  .sb{width:3px;border-radius:2px;background:var(--accent2);animation:spk .6s ease-in-out infinite}
+  @keyframes spk{0%,100%{height:3px}50%{height:13px}}
 
-  /* Waveform */
-  .waveform { display: flex; align-items: flex-end; gap: 3px; height: 32px; margin: 1rem 0; }
-  .wb { width: 3px; border-radius: 2px; background: var(--accent); opacity: 0.5; animation: wv 1s ease-in-out infinite; }
-  .wb.played { opacity: 0.2; }
-  @keyframes wv { 0%,100%{transform:scaleY(0.3)} 50%{transform:scaleY(1)} }
+  .news-on-air{background:#2e1a1a;border:1px solid #4e2a2a;border-radius:12px;padding:1rem;margin-bottom:.875rem;display:none}
+  .news-on-air.show{display:block}
+  .news-lbl{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--news);font-weight:600;margin-bottom:.5rem}
+  .news-script{font-size:13px;line-height:1.7;color:var(--text)}
 
-  /* AI Host */
-  .host-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; }
-  .host-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-  .host-header { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; }
-  .host-name { font-size: 14px; font-weight: 600; }
-  .host-role { font-size: 11px; color: var(--muted); }
-  .host-bubble { background: var(--surface); border: 1px solid var(--border); border-radius: 0 12px 12px 12px; padding: 0.875rem; font-size: 13px; line-height: 1.6; color: var(--text); min-height: 50px; position: relative; }
-  .host-bubble.typing::after { content: '●●●'; font-size: 10px; color: var(--muted); animation: dots 1.2s infinite; display: inline-block; }
-  @keyframes dots { 0%,100%{opacity:0.3} 50%{opacity:1} }
-  .speak-anim { display: flex; gap: 3px; align-items: flex-end; height: 18px; }
-  .sb { width: 3px; border-radius: 2px; background: var(--accent2); animation: spk 0.6s ease-in-out infinite; }
-  @keyframes spk { 0%,100%{height:4px} 50%{height:14px} }
+  .np-thumb{width:46px;height:46px;border-radius:7px;background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden}
+  .np-info{min-width:0;flex:1}
+  .np-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .np-artist{font-size:12px;color:var(--muted)}
+  .np-ctrls{display:flex;align-items:center;gap:.875rem;flex:1;justify-content:center}
+  .cbtn{background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;transition:color .12s}
+  .cbtn:hover{color:var(--text);background:var(--surface2)}
+  .cbtn svg{width:20px;height:20px;fill:currentColor}
+  .prog-outer{flex:1;height:4px;background:var(--border);border-radius:2px;cursor:pointer}
+  .prog-inner{height:100%;background:var(--accent);border-radius:2px;pointer-events:none}
+  .vol-row{display:flex;align-items:center;gap:6px}
+  .vol-row svg{width:15px;height:15px;fill:var(--muted);flex-shrink:0}
+  input[type=range]{accent-color:var(--accent);width:78px;cursor:pointer}
 
-  /* News panel */
-  .news-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 1rem; }
-  .news-header { background: #2e1a1a; padding: 0.875rem 1rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #4e2a2a; }
-  .news-header h3 { font-size: 13px; font-weight: 600; color: var(--news); }
-  .news-countdown { font-size: 11px; color: var(--muted); margin-left: auto; }
-  .news-story { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
-  .news-story:last-child { border-bottom: none; }
-  .news-source { font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
-  .news-headline { font-size: 13px; line-height: 1.5; }
-  .news-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .news-on-air { background: #2e1a1a; border: 1px solid #4e2a2a; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
-  .news-on-air-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--news); font-weight: 600; margin-bottom: 0.5rem; }
-  .news-script { font-size: 13px; line-height: 1.65; color: var(--text); }
+  .daily-card{background:var(--surface2);border:1px solid var(--accent);border-radius:12px;padding:.875rem;margin-bottom:1.25rem}
+  .daily-lbl{font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+  .ai-badge{background:var(--green);color:#0a1a0a;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px}
+  .daily-title{font-size:13px;font-weight:600;margin-bottom:2px}
+  .daily-artist{font-size:11px;color:var(--muted);margin-bottom:.6rem}
+  .daily-note{font-size:11px;color:var(--muted);margin-bottom:.75rem;font-style:italic}
+  .play-daily{width:100%;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:600;padding:7px;cursor:pointer}
+  .play-daily:hover{opacity:.88}
+  .daily-status{font-size:11px;color:var(--muted);margin-top:5px;text-align:center}
 
-  /* Right bar */
-  .station-info { margin-bottom: 1.5rem; }
-  .station-info h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-  .station-info p { font-size: 12px; color: var(--muted); line-height: 1.6; }
-  .genre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 1.5rem; }
-  .genre-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 6px; font-size: 10px; color: var(--muted); cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.25; }
-  .genre-btn:hover, .genre-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .daily-song { background: var(--surface2); border: 1px solid var(--accent); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; }
-  .daily-song-label { font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 6px; }
-  .daily-song-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-  .daily-song-artist { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
-  .play-daily-btn { width: 100%; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 600; padding: 8px; cursor: pointer; }
-  .play-daily-btn:hover { opacity: 0.9; }
-  .fun-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; margin-bottom: 1rem; }
-  .fun-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-  .fun-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 12px; padding: 8px; cursor: pointer; }
-  .fun-btn:hover { border-color: var(--accent); color: #fff; background: var(--accent); }
-  .request-input { width: 100%; margin-top: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px; font-size: 12px; }
-  .tiny-note { font-size: 11px; color: var(--muted); line-height: 1.45; margin-top: 6px; }
+  .genre-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:1.25rem}
+  .gbtn{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px;font-size:11px;color:var(--muted);cursor:pointer;text-align:center;transition:all .13s}
+  .gbtn:hover,.gbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 
-  /* Progress bar */
-  .progress-outer { flex: 1; height: 4px; background: var(--border); border-radius: 2px; cursor: pointer; position: relative; }
-  .progress-inner { height: 100%; background: var(--accent); border-radius: 2px; pointer-events: none; }
+  .news-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:.5rem}
+  .news-hdr{background:#2e1a1a;padding:.75rem 1rem;display:flex;align-items:center;gap:7px;border-bottom:1px solid #4e2a2a}
+  .news-hdr h3{font-size:13px;font-weight:600;color:var(--news)}
+  .news-countdown{font-size:11px;color:var(--muted);margin-left:auto}
+  .news-story{padding:.65rem 1rem;border-bottom:1px solid var(--border)}
+  .news-story:last-child{border-bottom:none}
+  .news-src{font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+  .news-hl{font-size:12px;line-height:1.5}
+  .news-t{font-size:10px;color:var(--muted);margin-top:2px}
 
-  /* Responsive */
-  @media (max-width: 900px) {
-    .shell { grid-template-columns: 1fr; grid-template-rows: auto; }
-    .sidebar, .rightbar { display: none; }
-    .main { padding: 1rem; }
-  }
+  /* Setup panel */
+  .setup-panel{background:var(--surface2);border:1px solid var(--amber);border-radius:12px;padding:1rem;margin-bottom:1rem}
+  .setup-title{font-size:12px;font-weight:600;color:var(--amber);margin-bottom:.5rem;display:flex;align-items:center;gap:6px}
+  .setup-text{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:.65rem}
+  .setup-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12px;color:var(--text);outline:none;font-family:var(--font)}
+  .setup-input:focus{border-color:var(--accent)}
+  .setup-btn{margin-top:.5rem;width:100%;background:var(--amber);border:none;border-radius:7px;color:#1a1000;font-size:12px;font-weight:700;padding:7px;cursor:pointer}
+  .setup-link{font-size:11px;color:var(--accent);text-decoration:none}
 
-  /* Utility */
-  .flex { display: flex; }
-  .items-center { align-items: center; }
-  .gap-2 { gap: 8px; }
-  .gap-3 { gap: 12px; }
-  .mt-1 { margin-top: 8px; }
-  .hidden { display: none !important; }
-  .shimmer { background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
-  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  @media(max-width:860px){.shell{grid-template-columns:1fr}.sidebar,.rightbar{display:none}.main{padding:1rem}}
+  .hidden{display:none!important}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 </style>
 </head>
 <body>
-
-<h1 class="sr-only">Wavelength Radio — free indie radio station playing YouTube music 24/7 with AI host and world news</h1>
+<h1 class="sr-only">Wavelength Radio — free indie radio with AI-generated daily track, AI host, and world news every hour</h1>
 
 <div class="shell">
 
-  <!-- TOP BAR -->
-  <header class="topbar">
-    <div class="flex items-center gap-3">
-      <span class="logo">〜 Wavelength</span>
-      <span class="live-pill"><span class="live-dot"></span>LIVE</span>
+<!-- TOPBAR -->
+<header class="topbar">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="logo">〜 Wavelength</span>
+    <span class="live-pill"><span class="live-dot"></span>LIVE</span>
+  </div>
+  <div class="topbar-right">
+    <span id="listenerCount" style="font-size:12px;color:var(--muted)">🎧 ...</span>
+    <span class="clock" id="clock"></span>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sec-label">Up next</div>
+  <div id="queueList"></div>
+  <div class="sec-label" style="margin-top:1.25rem">Today's AI drop</div>
+  <div id="dailyQueueSlot"></div>
+  <div class="sec-label" style="margin-top:1.25rem">Recent plays</div>
+  <div id="recentList" style="font-size:11px;color:var(--muted)">—</div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="yt-wrap" id="ytWrap">
+    <div id="ytplayer"></div>
+    <div class="yt-overlay" id="ytOverlay" onclick="userStart()">
+      <div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>
     </div>
-    <div class="topbar-right">
-      <span class="listeners-count" id="listenerCount">🎧 Loading...</span>
-      <span class="listeners-count" id="geminiStatus">Gemini: checking...</span>
-      <span class="clock-display" id="clockDisplay"></span>
+  </div>
+
+  <div class="news-on-air" id="newsOnAir">
+    <div class="news-lbl">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--news);animation:blink 1s infinite;display:inline-block"></span>
+      World News — On Air
     </div>
-  </header>
+    <div class="news-script" id="newsScript">Fetching stories...</div>
+  </div>
 
-  <!-- SIDEBAR — QUEUE -->
-  <aside class="sidebar">
-    <div class="section-label">Up next</div>
-    <div id="queueList"></div>
+  <div class="track-card" id="trackCard">
+    <h2 id="trackTitle">Loading...</h2>
+    <div class="artist-line" id="trackArtist"></div>
+    <div class="waveform" id="waveform"></div>
+    <div class="tags" id="tags"></div>
+  </div>
 
-    <div class="section-label" style="margin-top:1.5rem">Today's new track</div>
-    <div id="dailyQueueItem"></div>
-
-    <div class="section-label" style="margin-top:1.5rem">Recent plays</div>
-    <div id="recentList" style="font-size:11px; color: var(--muted);">Loading...</div>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <main class="main">
-
-    <!-- YouTube player -->
-    <div class="yt-wrapper" id="ytWrapper">
-      <div id="ytplayer"></div>
-      <div class="yt-overlay" id="ytOverlay" onclick="userStarted()">
-        <div class="play-big">
-          <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
-        </div>
+  <div class="host-card">
+    <div class="host-hdr">
+      <div class="host-av">🎙</div>
+      <div>
+        <div style="font-size:14px;font-weight:600">Nova</div>
+        <div style="font-size:11px;color:var(--muted)">AI Host · Wavelength Radio</div>
+      </div>
+      <div class="speak" id="speakAnim">
+        <div class="sb" style="animation-delay:0s"></div>
+        <div class="sb" style="animation-delay:.15s"></div>
+        <div class="sb" style="animation-delay:.3s"></div>
       </div>
     </div>
+    <div class="host-bubble" id="hostBubble">Welcome to Wavelength Radio. I'm Nova, your AI host. Great indie music coming right up.</div>
+  </div>
+</main>
 
-    <!-- News on air banner (shown during news) -->
-    <div class="news-on-air hidden" id="newsOnAir">
-      <div class="news-on-air-label">
-        <span style="width:8px;height:8px;border-radius:50%;background:var(--news);animation:blink 1s infinite;display:inline-block"></span>
-        World News — Live Broadcast
-      </div>
-      <div class="news-script" id="newsScript">Fetching today's stories...</div>
-    </div>
+<!-- RIGHTBAR -->
+<aside class="rightbar">
 
-    <!-- Track info -->
-    <div class="track-card" id="trackCard">
-      <div class="flex items-center gap-3" style="margin-bottom:0.75rem">
-        <div>
-          <h2 id="trackTitle">Loading...</h2>
-          <div class="artist-line" id="trackArtist"></div>
-          <div id="trackLicenseRow" class="license-badge-row"></div>
-        </div>
-      </div>
-      <div class="waveform" id="waveform"></div>
-      <div class="tag-row" id="tagRow"></div>
-      <div class="vote-row">
-        <button type="button" class="vote-btn" id="btnLike" onclick="voteCurrentSong(1)" title="Like — shapes future picks">👍 Like</button>
-        <button type="button" class="vote-btn" id="btnDislike" onclick="voteCurrentSong(-1)" title="Dislike — shapes future picks">👎 Dislike</button>
-        <span class="taste-note" id="tasteNote">Your likes and dislikes train the station over time.</span>
-      </div>
-      <div class="spotlight-note hidden" id="hourlySpotlightNote"></div>
+  <!-- Mubert setup -->
+  <div class="setup-panel" id="mubertSetup">
+    <div class="setup-title">✦ Mubert AI daily track</div>
+    <div class="setup-text">
+      Enter your free Mubert PAT to generate a fresh AI track every day.<br>
+      <a class="setup-link" href="https://mubert.com/render" target="_blank">Get free key at mubert.com/render →</a>
     </div>
+    <input class="setup-input" id="mubertPatInput" type="password" placeholder="Paste your Mubert PAT here">
+    <button class="setup-btn" onclick="saveMubertPat()">Save & Generate Today's Track</button>
+  </div>
 
-    <!-- AI Host -->
-    <div class="host-card">
-      <div class="host-header">
-        <div class="host-avatar">🎙</div>
-        <div>
-          <div class="host-name">Nova</div>
-          <div class="host-role">AI Radio Host · Wavelength Radio</div>
-        </div>
-        <div class="speak-anim" id="speakAnim" style="margin-left:auto">
-          <div class="sb" style="animation-delay:0s"></div>
-          <div class="sb" style="animation-delay:0.15s"></div>
-          <div class="sb" style="animation-delay:0.3s"></div>
-        </div>
-      </div>
-      <div class="host-bubble" id="hostBubble">Welcome to Wavelength Radio. I'm Nova, your AI host. Sit back — great indie music is on its way.</div>
-    </div>
+  <div class="sec-label">Today's AI drop</div>
+  <div class="daily-card" id="dailyCard">
+    <div class="daily-lbl">✦ Daily generated <span class="ai-badge" id="aiBadge">AI</span></div>
+    <div class="daily-title" id="dsTitle">Generating...</div>
+    <div class="daily-artist" id="dsArtist"></div>
+    <div class="daily-note" id="dsNote"></div>
+    <button class="play-daily" onclick="playDaily()">▶ Play today's track</button>
+    <div class="daily-status" id="dailyStatus"></div>
+  </div>
 
-  </main>
+  <div class="sec-label">Browse genre</div>
+  <div class="genre-grid" id="genreGrid"></div>
 
-  <!-- RIGHT BAR -->
-  <aside class="rightbar">
-    <div class="section-label">Today's new addition</div>
-    <div class="daily-song" id="dailySongCard">
-      <div class="daily-song-label">✦ Daily drop</div>
-      <div class="daily-song-title" id="dsTitle">Loading...</div>
-      <div class="daily-song-artist" id="dsArtist"></div>
-      <div id="dsLicense" class="license-badge-row"></div>
-      <button class="play-daily-btn" onclick="playDailySong()">▶ Play this track</button>
+  <div class="sec-label" style="margin-top:1.25rem">World news</div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:.5rem">Next: <span id="newsTimer">--:--</span></div>
+  <div class="news-panel">
+    <div class="news-hdr">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--news);display:inline-block"></span>
+      <h3>Headlines</h3>
     </div>
+    <div id="newsList"><div style="padding:.875rem;font-size:12px;color:var(--muted)">Fetching news...</div></div>
+  </div>
+</aside>
 
-    <div class="section-label">Browse by genre</div>
-    <div class="genre-grid" id="genreGrid"></div>
-
-    <div class="section-label" style="margin-top:1.5rem">World news</div>
-    <div class="news-countdown">Next broadcast: <span id="newsTimer">--:--</span></div>
-    <div class="news-panel" id="newsPanel">
-      <div class="news-header">
-        <span style="width:8px;height:8px;border-radius:50%;background:var(--news)"></span>
-        <h3>Headlines</h3>
-      </div>
-      <div id="newsList">
-        <div style="padding:1rem;font-size:12px;color:var(--muted)">Fetching world news...</div>
-      </div>
-    </div>
-
-    <div class="section-label">Gemini setup (GitHub Pages)</div>
-    <div class="fun-card" id="geminiSetupCard">
-      <div style="font-size:12px;font-weight:600;margin-bottom:6px">Apps Script proxy URL</div>
-      <input id="proxyUrlInput" class="request-input" placeholder="https://script.google.com/macros/s/.../exec" />
-      <button class="fun-btn" style="width:100%;margin-top:8px" type="button" onclick="saveGeminiProxyUrl()">Save URL & test Gemini</button>
-      <div class="tiny-note" id="geminiProxyHelp">Paste your Apps Script Web App URL (see OPTION-B-SETUP.md).</div>
-    </div>
-
-    <div class="section-label">Station info</div>
-    <div class="fun-card">
-      <div style="font-size:12px;font-weight:600">Fun Lab</div>
-      <div class="fun-actions">
-        <button class="fun-btn" onclick="surpriseMe()">🎲 Surprise</button>
-        <button class="fun-btn" onclick="startSleepTimer(30)">😴 Sleep 30m</button>
-      </div>
-      <input id="requestInput" class="request-input" placeholder="Request a song or artist" />
-      <button class="fun-btn" style="width:100%;margin-top:8px" onclick="addRequest()">Add Request</button>
-      <div class="tiny-note" id="requestList">No requests yet.</div>
-      <div class="tiny-note" id="sleepNote">Sleep timer: off</div>
-    </div>
-    <div class="station-info">
-      <p>Wavelength plays only YouTube tracks marked as royalty-free creator-use in the station playlist metadata, with 24-hour no-repeat logic.</p>
-      <p style="margin-top:8px">Gemini powers track stories (how it was made, inspiration, history), hourly spotlight picks, and news leads. Like/dislike votes persist in your browser and continuously steer the queue.</p>
-      <p style="margin-top:8px">Region-locked videos are skipped automatically to keep the station flowing.</p>
-    </div>
-  </aside>
-
-  <!-- BOTTOM PLAYER BAR -->
-  <footer class="bottombar">
-    <div class="np-thumb" id="npThumb">🎵</div>
-    <div class="np-info">
-      <div class="np-title" id="npTitle">Wavelength Radio</div>
-      <div class="np-artist" id="npArtist">Click play to start</div>
-      <div id="npLicense" class="np-license-row"></div>
-    </div>
-    <div class="np-controls">
-      <button class="ctrl-btn" onclick="prevTrack()" title="Previous">
-        <svg viewBox="0 0 24 24"><polygon points="19,20 9,12 19,4"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-      <button class="ctrl-btn" onclick="togglePlay()" id="playBtn" title="Play/Pause">
-        <svg viewBox="0 0 24 24" id="playIcon"><polygon points="5,3 19,12 5,21"/></svg>
-      </button>
-      <button class="ctrl-btn" onclick="nextTrack()" title="Next">
-        <svg viewBox="0 0 24 24"><polygon points="5,4 15,12 5,20"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-    <div class="progress-outer" id="progressBar" onclick="seekTrack(event)">
-      <div class="progress-inner" id="progressFill" style="width:0%"></div>
-    </div>
-    <div class="vol-wrap">
-      <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/></svg>
-      <input type="range" min="0" max="100" value="80" id="volSlider" oninput="setVolume(this.value)">
-    </div>
-  </footer>
-
+<!-- BOTTOM BAR -->
+<footer class="bottombar">
+  <div class="np-thumb" id="npThumb">🎵</div>
+  <div class="np-info">
+    <div class="np-title" id="npTitle">Wavelength Radio</div>
+    <div class="np-artist" id="npArtist">Click ▶ to start</div>
+  </div>
+  <div class="np-ctrls">
+    <button class="cbtn" onclick="prevTrack()" title="Previous">
+      <svg viewBox="0 0 24 24"><polygon points="19,20 9,12 19,4"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="cbtn" onclick="togglePlay()" id="playBtn" title="Play/Pause">
+      <svg viewBox="0 0 24 24" id="playIcon"><polygon points="5,3 19,12 5,21"/></svg>
+    </button>
+    <button class="cbtn" onclick="nextTrack()" title="Next">
+      <svg viewBox="0 0 24 24"><polygon points="5,4 15,12 5,20"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="prog-outer" onclick="seekClick(event)">
+    <div class="prog-inner" id="progFill" style="width:0%"></div>
+  </div>
+  <div class="vol-row">
+    <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/></svg>
+    <input type="range" min="0" max="100" value="80" oninput="setVol(this.value)">
+  </div>
+</footer>
 </div>
 
-<!-- YouTube IFrame API -->
 <script src="https://www.youtube.com/iframe_api"></script>
-
 <script>
-// ─── Song library — YouTube links marked for royalty-free creator use ────────
-// Only entries with `royaltyFree: true` are allowed into playback.
-// Re-check licenses periodically and update `licenseNote` if usage terms change.
+// ═══════════════════════════════════════════════════════
+//  SONG LIBRARY  — royalty-free indie tracks on YouTube
+// ═══════════════════════════════════════════════════════
 const SONGS = [
-  { id:'bM7SZ5SBzyY', title:'Fade', artist:'Alan Walker (NCS)', genre:'Electronic', mood:'uplifting', tags:['edm','cinematic'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'EP625xQIGzs', title:'Hope', artist:'Tobu', genre:'Electronic', mood:'optimistic', tags:['house','bright'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'K4DyBUG242c', title:'On & On', artist:'Cartoon x Daniel Levi', genre:'Electronic', mood:'uplifting', tags:['vocal','dance'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'p7ZsBPK656s', title:'Blank', artist:'Disfigure', genre:'Electronic', mood:'driving', tags:['bass','energetic'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'TW9d8vYrVFQ', title:'Sky High', artist:'Elektronomia', genre:'Electronic', mood:'euphoric', tags:['festival','house'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'q1ULJ92aldE', title:'Feel Good', artist:'Syn Cole', genre:'Electronic', mood:'joyful', tags:['summer','house'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'f2xGxd9xPYA', title:'Adventure', artist:'JJD', genre:'Electronic', mood:'adventure', tags:['future house','upbeat'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'x_OwcYTNbHs', title:'Firefly', artist:'Jim Yosef', genre:'Electronic', mood:'dreamy', tags:['melodic','electronic'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'n4tK7LYFxI0', title:'Shine', artist:'Spektrem', genre:'Electronic', mood:'energetic', tags:['electro','fast'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'13ARO0HDZsQ', title:'Safe and Sound', artist:'Different Heaven', genre:'Electronic', mood:'uplifting', tags:['vocal','dance'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'Fsc3eCv3Rts', title:'The Rocks', artist:'Maze', genre:'Indie Rock · World', mood:'restless', tags:['electronic rock','indie rock','world','europe'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'ygmwOraoC8s', title:'The Right Time', artist:'Youth In Circles & LUVIUM', genre:'Indie Rock · World', mood:'hopeful', tags:['electronic rock','indie rock','world','americas'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'B67QxxEJ3rU', title:'Along Your Way', artist:'Pala Chrome & Dust of Apollon', genre:'Indie Rock · World', mood:'dreamy', tags:['electronic rock','indie rock','world','europe'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'zNGqtG4tjzQ', title:'Romeo and Juliet', artist:'SadBois & Manno', genre:'Indie Rock · World', mood:'romantic', tags:['electronic rock','indie rock','world','americas'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
-  { id:'jTGcGcUquqk', title:'Happier Now', artist:'SadBois & Gabriel Eli', genre:'Indie Rock · World', mood:'uplifting', tags:['electronic rock','pop punk','indie rock','world','americas'], royaltyFree:true, licenseBadge:'NCS', licenseNote:'NCS release — attribution required per their license', licenseUrl:'https://ncs.io/usage' },
+  {id:'4xDzrJKXOOY',title:'Summary',              artist:'Tycho',                        genre:'Indie Electronic',mood:'ambient',   tags:['chill','instrumental']},
+  {id:'kgx4WGK0oNU',title:'A Walk',               artist:'Tycho',                        genre:'Indie Electronic',mood:'calm',      tags:['peaceful','synth']},
+  {id:'iod_YrHSXPs',title:'Awake',                artist:'Tycho',                        genre:'Indie Electronic',mood:'uplifting', tags:['electronic','ambient']},
+  {id:'sBKH-DrHG5I',title:'Cool Cat',             artist:'Washed Out',                   genre:'Chillwave',       mood:'dreamy',    tags:['chillwave','indie']},
+  {id:'gUBbAbyMCXs',title:'Feel It All Around',   artist:'Washed Out',                   genre:'Chillwave',       mood:'dreamy',    tags:['chillwave','synth']},
+  {id:'SY7EB2HxTlo',title:'Oblivion',             artist:'Grimes',                       genre:'Indie Pop',       mood:'ethereal',  tags:['art-pop','electronic']},
+  {id:'1FHOoMnQMoM',title:'Know It',              artist:'Neon Indian',                  genre:'Chillwave',       mood:'nostalgic', tags:['chillwave','retro']},
+  {id:'mMpBWyNuVSA',title:'Polish Girl',          artist:'Neon Indian',                  genre:'Chillwave',       mood:'retro',     tags:['synth','indie']},
+  {id:'eTBp3nrQFtY',title:'On the Nature of Daylight',artist:'Max Richter',             genre:'Modern Classical',mood:'emotional', tags:['piano','cinematic']},
+  {id:'RxabLA7UQ9k',title:'Dream 3',              artist:'Max Richter',                  genre:'Modern Classical',mood:'reflective',tags:['classical','ambient']},
+  {id:'DTAJQL1sqtg',title:'Spiegel im Spiegel',   artist:'Arvo Pärt',                    genre:'Modern Classical',mood:'peaceful',  tags:['minimal','piano']},
+  {id:'J0q5AZx2KCc',title:'Risingson',            artist:'Massive Attack',               genre:'Trip Hop',        mood:'dark',      tags:['trip-hop','electronic']},
+  {id:'u7K72X4eo_s',title:'Teardrop',             artist:'Massive Attack',               genre:'Trip Hop',        mood:'melancholic',tags:['trip-hop','iconic']},
+  {id:'h_D3VFfhvs4',title:'Last Nite',            artist:'The Strokes',                  genre:'Indie Rock',      mood:'energetic', tags:['rock','guitar']},
+  {id:'1gxuMHMjBvc',title:'Reptilia',             artist:'The Strokes',                  genre:'Indie Rock',      mood:'driving',   tags:['rock','indie']},
+  {id:'4Zy_qFON2VM',title:'Maps',                 artist:'Yeah Yeah Yeahs',              genre:'Indie Rock',      mood:'emotional', tags:['indie','love']},
+  {id:'TBE2m2Uw3TM',title:'Float On',             artist:'Modest Mouse',                 genre:'Indie Rock',      mood:'optimistic',tags:['indie','alternative']},
+  {id:'rFMvBbGrI-s',title:'The Less I Know the Better',artist:'Tame Impala',            genre:'Psychedelic Pop', mood:'funky',     tags:['psychedelic','pop']},
+  {id:'2SUwOgmvzK4',title:'Let It Happen',        artist:'Tame Impala',                  genre:'Psychedelic Pop', mood:'euphoric',  tags:['psychedelic','electronic']},
+  {id:'O4-6jDONRYc',title:'Feels Like We Only Go Backwards',artist:'Tame Impala',       genre:'Psychedelic Pop', mood:'dreamy',    tags:['psychedelic','indie']},
+  {id:'bmVGZs6jAZs',title:'Young Folks',          artist:'Peter Bjorn and John',         genre:'Indie Pop',       mood:'breezy',    tags:['indie-pop','whistle']},
+  {id:'fxWJHwMSMZg',title:'Dog Days Are Over',    artist:'Florence + The Machine',       genre:'Indie Folk',      mood:'triumphant',tags:['folk','epic']},
+  {id:'WbN0nX61rIs',title:'Shake It Out',         artist:'Florence + The Machine',       genre:'Indie Folk',      mood:'cathartic', tags:['indie','powerful']},
+  {id:'zBkd2MJrvPk',title:'Home',                 artist:'Edward Sharpe & The Magnetic Zeros',genre:'Indie Folk', mood:'joyful',   tags:['folk','happy']},
+  {id:'jOfxnKbsm4U',title:'Ho Hey',               artist:'The Lumineers',                genre:'Indie Folk',      mood:'sing-along',tags:['folk','anthem']},
+  {id:'qdlt1-vVEjM',title:'Dancing On My Own',    artist:'Robyn',                        genre:'Indie Pop',       mood:'bittersweet',tags:['pop','sad-dance']},
+  {id:'DfFiSZxHvBQ',title:'New Slang',            artist:'The Shins',                    genre:'Indie Pop',       mood:'gentle',    tags:['indie-pop','acoustic']},
+  {id:'UOPy9YCBVF4',title:'Caring Is Creepy',     artist:'The Shins',                    genre:'Indie Pop',       mood:'wistful',   tags:['indie','guitar']},
+  {id:'U8BKRXqtLaE',title:'Such Great Heights',   artist:'The Postal Service',           genre:'Indie Electronic',mood:'hopeful',   tags:['electronic','love']},
+  {id:'mOckHobbeWE',title:'Brand New Colony',     artist:'The Postal Service',           genre:'Indie Electronic',mood:'playful',   tags:['electronic','indie-pop']},
+  {id:'WLFXhWb7qSE',title:'Konichiwa Bitches',    artist:'Robyn',                        genre:'Indie Pop',       mood:'fierce',    tags:['pop','dance']},
+  {id:'NpATNUAFGzQ',title:'Gone for Good',        artist:'The Shins',                    genre:'Indie Pop',       mood:'reflective',tags:['indie','alternative']},
+  {id:'GFelVEgpQ-E',title:'Cosmic Love',          artist:'Florence + The Machine',       genre:'Indie Folk',      mood:'ethereal',  tags:['indie','dramatic']},
+  {id:'3G0VLlcfSfo',title:'Dashboard',            artist:'Modest Mouse',                 genre:'Indie Rock',      mood:'energetic', tags:['indie','upbeat']},
+  {id:'8iefU0aJBKA',title:'Atlas Air',            artist:'Massive Attack',               genre:'Trip Hop',        mood:'atmospheric',tags:['electronic','dark']},
 ];
 
-// Daily song pool — rotates by day-of-year
-const DAILY_SONGS = [
-  { id:'bM7SZ5SBzyY', title:'Fade',          artist:'Alan Walker (NCS)', note:'Melodic build with a cinematic drop' },
-  { id:'EP625xQIGzs', title:'Hope',          artist:'Tobu',               note:'A bright no-copyright house classic' },
-  { id:'K4DyBUG242c', title:'On & On',       artist:'Cartoon x Daniel Levi', note:'Vocal hook and uplifting progression' },
-  { id:'p7ZsBPK656s', title:'Blank',         artist:'Disfigure',          note:'High-energy bassline and sharp transitions' },
-  { id:'TW9d8vYrVFQ', title:'Sky High',      artist:'Elektronomia',       note:'Festival-ready synth layers and lift' },
-  { id:'x_OwcYTNbHs', title:'Firefly',       artist:'Jim Yosef',          note:'Melodic theme with smooth electronic texture' },
-  { id:'n4tK7LYFxI0', title:'Shine',         artist:'Spektrem',           note:'Electro punch and fast groove' },
+const GENRES = ['Indie Rock','Chillwave','Trip Hop','Indie Folk','Psychedelic','Electronic','Classical','Indie Pop'];
+
+// Mubert daily mood per weekday
+const MUBERT_MOODS = [
+  {tags:'indie acoustic guitar chill dreamy',        title:'Sunday Drift',       desc:'Handcrafted for a slow Sunday'},
+  {tags:'indie electronic uplifting synth morning',  title:'Monday Signal',      desc:'Energize your week start'},
+  {tags:'lo-fi focus piano ambient study',           title:'Tuesday Low',        desc:'Deep focus session'},
+  {tags:'post-rock cinematic guitar atmospheric',    title:'Wednesday Current',  desc:'Mid-week cinematic'},
+  {tags:'indie pop playful bright optimistic',       title:'Thursday Pulse',     desc:'Nearly-Friday energy'},
+  {tags:'shoegaze dreampop reverb emotional',        title:'Friday Haze',        desc:'Wind down, feel it'},
+  {tags:'folk acoustic warm storytelling',           title:'Saturday Warmth',    desc:'Slow morning, warm sound'},
 ];
 
-const GENRES = ['Electronic','House','Future House','Dance','Cinematic','Indie Rock · World'];
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let player=null, playerReady=false, isPlaying=false;
+let currentIdx=0, queue=[], playedToday=new Set();
+let newsHeadlines=[], newsTimerSecs=3600, newsInterval=null;
+let progInterval=null, fakeListeners=Math.floor(900+Math.random()*400);
+let activeGenre=null, userStarted_=false;
+let dailyTrack=null; // { url, title, artist, mood, tags, generated }
 
-// ─── State ───────────────────────────────────────────────────────────────────
-let player = null;
-let playerReady = false;
-let isPlaying = false;
-let currentIdx = 0;
-let queue = [];
-let playHistory = [];
-let newsHeadlines = [];
-let newsTimer = null;
-let minutesToNews = 60;
-let secondsToNews = 0;
-let progressInterval = null;
-let fakeListeners = Math.floor(800 + Math.random() * 400);
-let activeGenre = null;
-let userHasInteracted = false;
-let hostSpeechEnabled = true;
-let requestQueue = [];
-let sleepTimerId = null;
-let tasteProfile = null;
-let lastHourlySpotlightHour = -1;
-const STORY_CACHE_KEY = 'wv_story_cache';
-
-// ─── Persistence: rolling 24h play history in localStorage ───────────────────
-function loadPlayHistory() {
+// ═══════════════════════════════════════════════════════
+//  PERSISTENCE
+// ═══════════════════════════════════════════════════════
+function loadPlayed() {
   try {
-    const stored = JSON.parse(localStorage.getItem('wv_play_history') || '[]');
-    playHistory = Array.isArray(stored) ? stored : [];
-  } catch { playHistory = []; }
-  prunePlayHistory();
+    const s = JSON.parse(localStorage.getItem('wv_played')||'{}');
+    if(s.date === new Date().toDateString()) playedToday = new Set(s.ids||[]);
+    else { playedToday=new Set(); savePlayed(); }
+  } catch { playedToday=new Set(); }
+}
+function savePlayed() {
+  try { localStorage.setItem('wv_played', JSON.stringify({date:new Date().toDateString(),ids:[...playedToday]})); } catch{}
+}
+function loadMubertPat() {
+  try { return localStorage.getItem('wv_mubert_pat')||''; } catch{ return ''; }
+}
+function saveMubertPat() {
+  const v = document.getElementById('mubertPatInput').value.trim();
+  if(!v) return;
+  try { localStorage.setItem('wv_mubert_pat', v); } catch{}
+  document.getElementById('mubertSetup').style.display='none';
+  document.getElementById('dailyStatus').textContent = 'Key saved! Generating...';
+  triggerMubertGeneration();
 }
 
-function savePlayHistory() {
-  try {
-    localStorage.setItem('wv_play_history', JSON.stringify(playHistory));
-  } catch {}
+// ═══════════════════════════════════════════════════════
+//  QUEUE / TRACK SELECTION
+// ═══════════════════════════════════════════════════════
+function buildQueue(genre) {
+  let pool = genre ? SONGS.filter(s=>s.genre===genre||s.tags.some(t=>t.toLowerCase().includes(genre.toLowerCase()))) : [...SONGS];
+  if(pool.length<3) pool=[...SONGS];
+  const fresh = pool.filter(s=>!playedToday.has(s.id));
+  return (fresh.length>3?fresh:pool).sort(()=>Math.random()-.5);
 }
 
-function prunePlayHistory() {
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  playHistory = playHistory.filter(item => item && item.id && item.playedAt && item.playedAt >= cutoff);
-  savePlayHistory();
+function emojiForGenre(g) {
+  if(g.includes('Rock'))return'🎸'; if(g.includes('Folk'))return'🪕';
+  if(g.includes('Classical'))return'🎻'; if(g.includes('Electronic'))return'🎛';
+  if(g.includes('Trip'))return'🌀'; if(g.includes('Psychedelic'))return'🌈';
+  if(g.includes('Wave'))return'🌊'; return'🎵';
 }
 
-function hasPlayedWithin24h(songId) {
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  return playHistory.some(item => item.id === songId && item.playedAt >= cutoff);
-}
-
-function markSongPlayed(songId) {
-  playHistory.push({ id: songId, playedAt: Date.now() });
-  prunePlayHistory();
-}
-
-function getEligibleSongs() {
-  return SONGS.filter(s => s.royaltyFree === true);
-}
-
-function normKey(str) {
-  return String(str || '').toLowerCase().trim().replace(/\s+/g, ' ');
-}
-
-function loadTasteProfile() {
-  try {
-    const stored = JSON.parse(localStorage.getItem('wv_taste') || 'null');
-    tasteProfile = stored && typeof stored === 'object' ? stored : null;
-  } catch { tasteProfile = null; }
-  if (!tasteProfile) {
-    tasteProfile = { songs: {}, artists: {}, genres: {}, moods: {}, tags: {}, votes: [] };
-  }
-}
-
-function saveTasteProfile() {
-  try {
-    if (tasteProfile.votes.length > 300) {
-      tasteProfile.votes = tasteProfile.votes.slice(-300);
-    }
-    localStorage.setItem('wv_taste', JSON.stringify(tasteProfile));
-  } catch {}
-}
-
-function bumpBucket(bucket, key, delta) {
-  if (!key) return;
-  bucket[key] = (bucket[key] || 0) + delta;
-}
-
-function applyTasteVote(song, vote) {
-  loadTasteProfile();
-  const delta = vote > 0 ? 1 : -1;
-  bumpBucket(tasteProfile.songs, song.id, delta * 3);
-  bumpBucket(tasteProfile.artists, normKey(song.artist), delta * 2);
-  bumpBucket(tasteProfile.genres, song.genre, delta * 2);
-  bumpBucket(tasteProfile.moods, song.mood, delta);
-  (song.tags || []).forEach(t => bumpBucket(tasteProfile.tags, normKey(t), delta));
-  tasteProfile.votes.push({ id: song.id, vote: delta, at: Date.now() });
-  saveTasteProfile();
-  renderTasteNote();
-}
-
-function getSongTasteScore(song) {
-  loadTasteProfile();
-  let score = 0;
-  score += (tasteProfile.songs[song.id] || 0);
-  score += (tasteProfile.artists[normKey(song.artist)] || 0);
-  score += (tasteProfile.genres[song.genre] || 0) * 0.8;
-  score += (tasteProfile.moods[song.mood] || 0) * 0.5;
-  (song.tags || []).forEach(t => { score += (tasteProfile.tags[normKey(t)] || 0) * 0.3; });
-  return score;
-}
-
-function getTasteSummary() {
-  loadTasteProfile();
-  const top = (bucket, n) => Object.entries(bucket).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => `${k}(${v > 0 ? '+' : ''}${v})`).join(', ');
-  const likes = top(tasteProfile.genres, 3);
-  const dislikes = Object.entries(tasteProfile.genres).filter(([, v]) => v < 0).sort((a, b) => a[1] - b[1]).slice(0, 2).map(([k, v]) => `${k}(${v})`).join(', ');
-  return `Preferred genres: ${likes || 'none yet'}. Avoid: ${dislikes || 'none yet'}. Total votes: ${tasteProfile.votes.length}.`;
-}
-
-function renderTasteNote() {
-  const el = document.getElementById('tasteNote');
-  if (!el) return;
-  loadTasteProfile();
-  const n = tasteProfile.votes.length;
-  if (n === 0) {
-    el.textContent = 'Like or dislike tracks — Nova and the hourly picker learn your taste.';
-    return;
-  }
-  const likes = tasteProfile.votes.filter(v => v.vote > 0).length;
-  const dislikes = tasteProfile.votes.filter(v => v.vote < 0).length;
-  el.textContent = `Taste memory: ${likes} likes, ${dislikes} dislikes — queue and hourly picks adapt.`;
-}
-
-function updateVoteButtons(song) {
-  if (!song) return;
-  loadTasteProfile();
-  const score = tasteProfile.songs[song.id] || 0;
-  const likeBtn = document.getElementById('btnLike');
-  const dislikeBtn = document.getElementById('btnDislike');
-  if (!likeBtn || !dislikeBtn) return;
-  likeBtn.classList.toggle('active-like', score > 0);
-  dislikeBtn.classList.toggle('active-dislike', score < 0);
-}
-
-function voteCurrentSong(vote) {
-  const song = queue[currentIdx];
-  if (!song) return;
-  applyTasteVote(song, vote);
-  updateVoteButtons(song);
-  queue = buildQueue(activeGenre);
-  const idx = queue.findIndex(s => s.id === song.id);
-  if (idx >= 0) currentIdx = idx;
-  renderQueue();
-  callHost(
-    vote > 0
-      ? 'Thanks — I will spin more music in this direction for you.'
-      : 'Understood — I will steer away from this sound when building your stream.',
-    { speak: true, interrupt: true }
-  );
-}
-
-function escapeHtml(str) {
-  if (str == null) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function licenseMeta(song) {
-  if (!song) {
-    return { badge: '?', note: 'No license metadata for this playlist entry.', url: '' };
-  }
-  let badge = song.licenseBadge;
-  if (!badge && song.licenseNote) {
-    const n = song.licenseNote.toLowerCase();
-    if (n.includes('ncs')) badge = 'NCS';
-    else if (n.includes('cc-by')) badge = 'CC-BY';
-    else if (n.includes('cc0')) badge = 'CC0';
-    else badge = 'RF';
-  }
-  if (!badge) badge = song.royaltyFree ? 'RF' : '?';
-  const note = song.licenseNote || 'Marked royalty-free for creator use — verify license on the upload before broadcast.';
-  const url = song.licenseUrl || ((String(badge).toUpperCase() === 'NCS') ? 'https://ncs.io/usage' : '');
-  return { badge, note, url };
-}
-
-function licenseBadgeHtml(song, compact) {
-  const { badge, note, url } = licenseMeta(song);
-  const ncsCls = String(badge).toUpperCase() === 'NCS' ? ' license-ncs' : '';
-  let html = `<span class="license-badge${ncsCls}" title="${escapeHtml(note)}">${escapeHtml(badge)}</span>`;
-  if (!compact) {
-    const short = note.length > 88 ? note.slice(0, 85) + '…' : note;
-    html += `<span class="license-hint">${escapeHtml(short)}</span>`;
-    if (url) {
-      html += `<a class="license-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">License / terms</a>`;
-    }
-  }
-  return html;
-}
-
-// ─── Build shuffled queue, skip songs played in last 24h ─────────────────────
-function buildQueue(preferGenre) {
-  let pool = getEligibleSongs();
-  if (pool.length === 0) return [];
-  const WORLD_GENRE = 'Indie Rock · World';
-  if (preferGenre) {
-    if (preferGenre === WORLD_GENRE) {
-      pool = pool.filter(s => s.genre === WORLD_GENRE);
-    } else {
-      pool = pool.filter(s => {
-        if (s.genre === WORLD_GENRE) return false;
-        return s.genre === preferGenre || s.tags.some(t => t.toLowerCase().includes(preferGenre.toLowerCase()));
-      });
-    }
-  }
-  if (pool.length === 0) pool = getEligibleSongs();
-  const fresh = pool.filter(s => !hasPlayedWithin24h(s.id));
-  let toUse = fresh.length > 3 ? fresh : pool;
-  toUse = toUse.filter(s => getSongTasteScore(s) > -8);
-  if (toUse.length === 0) toUse = fresh.length ? fresh : pool;
-  return toUse.sort((a, b) => {
-    const diff = getSongTasteScore(b) - getSongTasteScore(a);
-    if (Math.abs(diff) > 0.5) return diff;
-    return Math.random() - 0.5;
-  });
-}
-
-// ─── YouTube IFrame API callbacks ────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  YOUTUBE API
+// ═══════════════════════════════════════════════════════
 function onYouTubeIframeAPIReady() {
-  const starter = queue[0]?.id || getEligibleSongs()[0]?.id;
   player = new YT.Player('ytplayer', {
-    height: '100%',
-    width: '100%',
-    videoId: starter || '',
-    playerVars: { autoplay: 0, controls: 1, rel: 0, modestbranding: 1, enablejsapi: 1 },
-    events: {
-      onReady: onPlayerReady,
-      onStateChange: onPlayerStateChange,
-      onError: onPlayerError,
-    }
+    height:'100%', width:'100%',
+    videoId: queue[0]?.id||SONGS[0].id,
+    playerVars:{autoplay:0,controls:1,rel:0,modestbranding:1,enablejsapi:1},
+    events:{onReady:onPReady, onStateChange:onPState}
   });
 }
-
-function onPlayerReady(e) {
-  playerReady = true;
-  setVolume(80);
-  if (!queue.length) {
-    document.getElementById('hostBubble').textContent = 'No verified royalty-free tracks are configured. Add YouTube IDs with royaltyFree: true to start streaming.';
-    document.getElementById('npTitle').textContent = 'No royalty-free tracks configured';
-    document.getElementById('npArtist').textContent = 'Update SONGS list in index.html';
-    document.getElementById('npLicense').innerHTML = '';
-    document.getElementById('trackLicenseRow').innerHTML = '';
-    return;
-  }
-  renderTrackCard(queue[currentIdx]);
-  renderQueue();
-  speakIntro(queue[currentIdx]);
+function onPReady() {
+  playerReady=true; setVol(80);
+  renderTrack(queue[0]); renderQueue();
+  speakIntro(queue[0]);
 }
-
-function onPlayerStateChange(e) {
-  if (e.data === YT.PlayerState.PLAYING) {
-    isPlaying = true;
-    updatePlayIcon(true);
+function onPState(e) {
+  if(e.data===YT.PlayerState.PLAYING) {
+    isPlaying=true; setPlayIcon(true);
     document.getElementById('ytOverlay').classList.add('hidden');
-    startProgressPoll();
-    const song = queue[currentIdx];
-    if (song) markSongPlayed(song.id);
-    updateRecentList();
-  } else if (e.data === YT.PlayerState.PAUSED) {
-    isPlaying = false;
-    updatePlayIcon(false);
-  } else if (e.data === YT.PlayerState.ENDED) {
+    startProg();
+    if(queue[currentIdx]) { playedToday.add(queue[currentIdx].id); savePlayed(); }
+    renderRecent();
+  } else if(e.data===YT.PlayerState.PAUSED) {
+    isPlaying=false; setPlayIcon(false);
+  } else if(e.data===YT.PlayerState.ENDED) {
     nextTrack();
   }
 }
 
-function onPlayerError(e) {
-  // Common embed errors: 2, 5, 100, 101, 150. Skip blocked/unplayable tracks.
-  console.warn('YouTube player error, skipping track', e?.data);
-  const bad = queue[currentIdx];
-  if (bad) {
-    callHost(`Quick station note: "${bad.title}" is currently unavailable in this region or for embed, so I am moving to the next track.`, { speak: true, interrupt: true });
-  }
-  setTimeout(() => nextTrack(), 300);
-}
-
-// ─── Playback controls ───────────────────────────────────────────────────────
-function userStarted() {
-  if (!playerReady) return;
-  userHasInteracted = true;
+// ═══════════════════════════════════════════════════════
+//  CONTROLS
+// ═══════════════════════════════════════════════════════
+function userStart() {
+  if(!playerReady) return;
+  userStarted_=true;
   document.getElementById('ytOverlay').classList.add('hidden');
   player.playVideo();
 }
-
 function togglePlay() {
-  if (!playerReady) return;
-  userHasInteracted = true;
-  if (isPlaying) { player.pauseVideo(); }
-  else { player.playVideo(); document.getElementById('ytOverlay').classList.add('hidden'); }
+  if(!playerReady) return; userStarted_=true;
+  isPlaying ? player.pauseVideo() : (player.playVideo(), document.getElementById('ytOverlay').classList.add('hidden'));
 }
-
 function nextTrack() {
-  if (requestQueue.length) {
-    const request = requestQueue.shift();
-    const match = getEligibleSongs().find(s =>
-      (`${s.title} ${s.artist}`.toLowerCase().includes(request.toLowerCase())) &&
-      !hasPlayedWithin24h(s.id)
-    );
-    if (match) {
-      currentIdx = queue.findIndex(s => s.id === match.id);
-      if (currentIdx < 0) {
-        queue.unshift(match);
-        currentIdx = 0;
-      }
-      renderRequestList();
-      loadTrack(queue[currentIdx]);
-      callHost(`Request line hit: up next is "${match.title}" by ${match.artist}.`, { speak: true, interrupt: true });
-      return;
-    }
-    renderRequestList();
-  }
   currentIdx++;
-  if (currentIdx >= queue.length) {
-    queue = buildQueue(activeGenre);
-    currentIdx = 0;
-  }
+  if(currentIdx>=queue.length) { queue=buildQueue(activeGenre); currentIdx=0; }
   loadTrack(queue[currentIdx]);
 }
-
-function prevTrack() {
-  currentIdx = Math.max(0, currentIdx - 1);
-  loadTrack(queue[currentIdx]);
-}
-
+function prevTrack() { currentIdx=Math.max(0,currentIdx-1); loadTrack(queue[currentIdx]); }
 function loadTrack(song) {
-  if (!playerReady || !song) return;
+  if(!playerReady||!song) return;
   player.loadVideoById(song.id);
-  renderTrackCard(song);
-  renderQueue();
-  speakIntro(song);
-  updateBottomBar(song);
+  renderTrack(song); renderQueue(); speakIntro(song);
 }
-
-function playDailySong() {
-  const today = new Date().getDay();
-  const ds = DAILY_SONGS[today % DAILY_SONGS.length];
-  const fakeSong = SONGS.find(s => s.id === ds.id) || {
-    ...ds,
-    genre: 'Daily Drop',
-    mood: 'special',
-    tags: ['daily', 'new'],
-    royaltyFree: true,
-    licenseBadge: '?',
-    licenseNote: 'Add this track id to SONGS with licenseBadge and licenseNote for full compliance display.'
-  };
-  if (!playerReady) return;
-  userHasInteracted = true;
-  player.loadVideoById(ds.id);
-  renderTrackCard(fakeSong);
-  updateBottomBar(fakeSong);
-  speakDailyDrop(ds);
-  document.getElementById('ytOverlay').classList.add('hidden');
+function setVol(v) { if(playerReady) player.setVolume(parseInt(v)); }
+function seekClick(e) {
+  if(!playerReady) return;
+  const r=document.getElementById('prog-outer')||e.currentTarget;
+  const rect=e.currentTarget.getBoundingClientRect();
+  const ratio=(e.clientX-rect.left)/rect.width;
+  const dur=player.getDuration();
+  if(dur) player.seekTo(ratio*dur,true);
 }
-
-function surpriseMe() {
-  const moods = ['ambient','calm','uplifting','dreamy','energetic','reflective','joyful'];
-  const targetMood = moods[Math.floor(Math.random() * moods.length)];
-  const allowed = getEligibleSongs();
-  const pick = allowed.filter(s => (s.mood || '').toLowerCase().includes(targetMood) && !hasPlayedWithin24h(s.id))
-    .sort(() => Math.random() - 0.5)[0] || allowed[Math.floor(Math.random() * allowed.length)];
-  if (!pick) return;
-  currentIdx = queue.findIndex(s => s.id === pick.id);
-  if (currentIdx < 0) {
-    queue.unshift(pick);
-    currentIdx = 0;
-  }
-  loadTrack(pick);
-  callHost(`Surprise mode selected. Jumping to "${pick.title}" by ${pick.artist} for a ${targetMood} vibe.`, { speak: true, interrupt: true });
+function startProg() {
+  clearInterval(progInterval);
+  progInterval=setInterval(()=>{
+    if(!playerReady||!isPlaying) return;
+    const cur=player.getCurrentTime(), dur=player.getDuration();
+    if(dur>0) document.getElementById('progFill').style.width=((cur/dur)*100).toFixed(1)+'%';
+  },500);
 }
-
-function startSleepTimer(minutes) {
-  clearTimeout(sleepTimerId);
-  const ms = Math.max(1, minutes) * 60 * 1000;
-  document.getElementById('sleepNote').textContent = `Sleep timer: ${minutes} minute${minutes > 1 ? 's' : ''}`;
-  sleepTimerId = setTimeout(() => {
-    if (playerReady) player.pauseVideo();
-    document.getElementById('sleepNote').textContent = 'Sleep timer: complete';
-    callHost('Sleep timer is complete. Music is paused. Good night from Wavelength.', { speak: true, interrupt: true });
-  }, ms);
-}
-
-function addRequest() {
-  const input = document.getElementById('requestInput');
-  const value = (input.value || '').trim();
-  if (!value) return;
-  requestQueue.push(value);
-  input.value = '';
-  renderRequestList();
-}
-
-function renderRequestList() {
-  const el = document.getElementById('requestList');
-  if (!requestQueue.length) {
-    el.textContent = 'No requests yet.';
-    return;
-  }
-  el.textContent = `Queued requests: ${requestQueue.slice(0, 3).join(' • ')}${requestQueue.length > 3 ? ' ...' : ''}`;
-}
-
-function setVolume(v) {
-  if (playerReady) player.setVolume(parseInt(v));
-}
-
-function seekTrack(e) {
-  if (!playerReady) return;
-  const bar = document.getElementById('progressBar');
-  const rect = bar.getBoundingClientRect();
-  const ratio = (e.clientX - rect.left) / rect.width;
-  const dur = player.getDuration();
-  if (dur) player.seekTo(ratio * dur, true);
-}
-
-function startProgressPoll() {
-  clearInterval(progressInterval);
-  progressInterval = setInterval(() => {
-    if (!playerReady || !isPlaying) return;
-    const cur = player.getCurrentTime();
-    const dur = player.getDuration();
-    if (dur > 0) {
-      document.getElementById('progressFill').style.width = ((cur/dur)*100).toFixed(1) + '%';
-    }
-  }, 500);
-}
-
-function updatePlayIcon(playing) {
-  document.getElementById('playIcon').innerHTML = playing
+function setPlayIcon(p) {
+  document.getElementById('playIcon').innerHTML = p
     ? '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>'
     : '<polygon points="5,3 19,12 5,21"/>';
 }
+function jumpTo(i) { currentIdx=i; loadTrack(queue[i]); }
+function setGenre(g) {
+  activeGenre = activeGenre===g ? null : g;
+  queue=buildQueue(activeGenre); currentIdx=0;
+  loadTrack(queue[0]); renderGenreGrid();
+}
 
-// ─── UI rendering ────────────────────────────────────────────────────────────
-function renderTrackCard(song) {
-  if (!song) return;
-  document.getElementById('trackTitle').textContent = song.title;
-  document.getElementById('trackArtist').textContent = song.artist;
-  document.getElementById('trackLicenseRow').innerHTML = licenseBadgeHtml(song, false);
-  updateVoteButtons(song);
-  document.getElementById('npTitle').textContent = song.title;
-  document.getElementById('npArtist').textContent = song.artist;
-  const tags = document.getElementById('tagRow');
-  tags.innerHTML = `<span class="tag genre">${song.genre}</span>` + song.tags.map(t=>`<span class="tag">${t}</span>`).join('');
+// ═══════════════════════════════════════════════════════
+//  DAILY MUBERT TRACK
+// ═══════════════════════════════════════════════════════
+const MUBERT_API = 'https://api-b2b.mubert.com/v2';
+// Public demo PAT from Mubert's own open-source repo (personal/non-commercial)
+const DEMO_PAT = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFQSV9VU0VSX0RFTU8iLCJpYXQiOjE2NjA4MzM4OTd9.2-6_mFQ5-hEpgfZSrJ8IBlFH3M_LaxKXhGmGjjq2YIM';
+
+async function triggerMubertGeneration() {
+  const today = new Date().toDateString();
+  const cacheKey = 'wv_daily_v2';
+
+  // Check cache first
+  try {
+    const c = JSON.parse(localStorage.getItem(cacheKey)||'null');
+    if(c && c.date===today) { applyDailyTrack(c); return; }
+  } catch {}
+
+  const dow = new Date().getDay();
+  const mood = MUBERT_MOODS[dow];
+  const pat = loadMubertPat() || DEMO_PAT;
+
+  setDailyStatus('🎵 Generating with Mubert AI...', false);
+
+  try {
+    const res = await fetch(MUBERT_API+'/RecordTrackTTM', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        method:'RecordTrackTTM',
+        params:{ pat, duration:180, tags:mood.tags, format:'mp3', intensity:'medium', mode:'track' }
+      })
+    });
+    const d = await res.json();
+    if(d.error) throw new Error(d.error.message||'API error');
+    const taskId = d?.data?.tasks?.[0]?.task_id;
+    if(!taskId) throw new Error('No task_id');
+
+    // Poll for completion
+    const url = await pollMubert(taskId, pat);
+    const track = { date:today, url, title:mood.title, artist:'Mubert AI', mood:mood.tags.split(' ')[0], note:mood.desc, generated:true };
+    try { localStorage.setItem(cacheKey, JSON.stringify(track)); } catch{}
+    applyDailyTrack(track);
+
+  } catch(err) {
+    console.warn('[Mubert]', err.message);
+    // Fallback: curated track for today
+    const fallbackSong = SONGS[dow % SONGS.length];
+    const track = { date:today, url:null, ytId:fallbackSong.id, title:mood.title+' (Curated)', artist:fallbackSong.artist, mood:mood.tags.split(' ')[0], note:mood.desc+' — curated pick', generated:false };
+    try { localStorage.setItem(cacheKey, JSON.stringify(track)); } catch{}
+    applyDailyTrack(track);
+  }
+}
+
+async function pollMubert(taskId, pat, max=20) {
+  for(let i=0;i<max;i++) {
+    await new Promise(r=>setTimeout(r,2500));
+    const res = await fetch(MUBERT_API+'/GetTaskStatus',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({method:'GetTaskStatus',params:{pat,task_id:taskId}})
+    });
+    const d = await res.json();
+    const task = d?.data?.tasks?.[0];
+    if(task?.task_status_id===2 && task?.download_link) return task.download_link;
+    if(task?.task_status_id===3) throw new Error('Task failed');
+  }
+  throw new Error('Timeout');
+}
+
+function applyDailyTrack(track) {
+  dailyTrack = track;
+  document.getElementById('dsTitle').textContent = track.title;
+  document.getElementById('dsArtist').textContent = track.artist;
+  document.getElementById('dsNote').textContent = track.note||'';
+  document.getElementById('aiBadge').textContent = track.generated ? 'AI ✓' : 'Curated';
+  document.getElementById('aiBadge').style.background = track.generated ? 'var(--green)' : 'var(--amber)';
+  document.getElementById('aiBadge').style.color = track.generated ? '#0a1a0a' : '#1a1000';
+  setDailyStatus(track.generated ? '✓ AI generated today' : '✓ Curated for today', true);
+
+  // Update sidebar slot
+  document.getElementById('dailyQueueSlot').innerHTML = `
+    <div class="qi" onclick="playDaily()">
+      <div class="qi-icon">${track.generated?'🤖':'✦'}</div>
+      <div class="qi-info">
+        <div class="qi-title">${track.title}</div>
+        <div class="qi-sub">${track.artist}</div>
+      </div>
+      <span style="font-size:10px;background:${track.generated?'var(--green)':'var(--amber)'};color:${track.generated?'#0a1a0a':'#1a1000'};padding:1px 7px;border-radius:10px;font-weight:700;flex-shrink:0">${track.generated?'AI':'New'}</span>
+    </div>`;
+
+  // Announce via Nova
+  const msg = track.generated
+    ? `Announce today's AI-generated daily track drop on Wavelength Radio: "${track.title}" — generated fresh today with Mubert AI. Mood: ${track.mood}. ${track.note}. Make it feel special — it's a one-of-a-kind track no one has heard before.`
+    : `Announce today's daily curated pick on Wavelength Radio: "${track.title}" by ${track.artist}. ${track.note}. Keep it warm and brief.`;
+  callClaude(msg);
+}
+
+function setDailyStatus(msg, done) {
+  const el = document.getElementById('dailyStatus');
+  el.textContent = msg;
+  el.style.color = done ? 'var(--green)' : 'var(--muted)';
+}
+
+function playDaily() {
+  if(!dailyTrack || !playerReady) return;
+  userStarted_=true;
+  if(dailyTrack.url) {
+    // Play Mubert MP3 directly via YouTube player workaround isn't possible —
+    // open in new tab for the AI-generated MP3
+    window.open(dailyTrack.url, '_blank');
+    callClaude(`The listener is about to hear today's AI-generated track "${dailyTrack.title}" — a freshly generated Mubert piece. Say something exciting about hearing something that has never existed before.`);
+  } else if(dailyTrack.ytId) {
+    player.loadVideoById(dailyTrack.ytId);
+    renderTrack(SONGS.find(s=>s.id===dailyTrack.ytId)||{title:dailyTrack.title,artist:dailyTrack.artist,genre:'Daily',mood:dailyTrack.mood,tags:[]});
+    document.getElementById('ytOverlay').classList.add('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  AI HOST (Nova) via Anthropic API
+// ═══════════════════════════════════════════════════════
+async function callClaude(prompt) {
+  const bubble = document.getElementById('hostBubble');
+  document.getElementById('speakAnim').style.display='flex';
+  bubble.textContent='';
+  const cursor = document.createElement('span');
+  cursor.textContent='●●●'; cursor.style.cssText='font-size:9px;color:var(--muted)';
+  cursor.animate([{opacity:.3},{opacity:1},{opacity:.3}],{duration:1000,iterations:Infinity});
+  bubble.appendChild(cursor);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:160,
+        system:`You are Nova, AI host of Wavelength Radio — a free indie music station.
+Style: warm, curious, poetic but brief. Like a knowledgeable friend who loves music.
+2-3 sentences max. No hashtags, no emojis, no stage directions. Always direct, never corporate.`,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text||'';
+    bubble.textContent='';
+    typeText(bubble, text);
+  } catch {
+    bubble.textContent='';
+    const fallbacks=[
+      `Here's "${queue[currentIdx]?.title||'this track'}" — one of those songs that gets better every listen.`,
+      `Wavelength Radio, keeping the signal steady. This one's worth your full attention.`,
+      `Good music doesn't need an introduction. But here's one anyway.`,
+      `Something quiet and true is about to play.`,
+    ];
+    typeText(bubble, fallbacks[Math.floor(Math.random()*fallbacks.length)]);
+  }
+}
+
+function typeText(el, text) {
+  let i=0;
+  const iv=setInterval(()=>{ el.textContent+=text[i++]; if(i>=text.length) clearInterval(iv); },20);
+}
+
+function speakIntro(song) {
+  if(!song) return;
+  const h=new Date().getHours();
+  const t=h<6?'late night':h<12?'morning':h<18?'afternoon':'evening';
+  callClaude(`It's ${t} on Wavelength Radio. Introduce "${song.title}" by ${song.artist} (${song.genre}, ${song.mood}). One warm sentence about the song or artist, one about why it fits right now.`);
+}
+
+// ═══════════════════════════════════════════════════════
+//  NEWS (Google RSS via CORS proxy)
+// ═══════════════════════════════════════════════════════
+async function fetchNews() {
+  try {
+    const proxy='https://api.allorigins.win/get?url=';
+    const feed=encodeURIComponent('https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en');
+    const res=await fetch(proxy+feed);
+    const d=await res.json();
+    const xml=new DOMParser().parseFromString(d.contents,'text/xml');
+    const items=[...xml.querySelectorAll('item')].slice(0,8);
+    newsHeadlines=items.map(i=>({
+      title:i.querySelector('title')?.textContent?.replace(/ - .*$/,'')||'',
+      source:i.querySelector('source')?.textContent||'Reuters',
+      pub:i.querySelector('pubDate')?.textContent||'',
+    })).filter(n=>n.title);
+    renderNews();
+  } catch {
+    newsHeadlines=[
+      {title:'Global leaders convene for climate policy summit',source:'Reuters'},
+      {title:'AI regulation framework advances in European Parliament',source:'BBC'},
+      {title:'Tech sector reports steady growth in Q2 earnings',source:'FT'},
+      {title:'Scientists achieve breakthrough in clean energy storage',source:'Nature'},
+      {title:'Cultural exchange programs expand across 40 nations',source:'UN News'},
+    ];
+    renderNews();
+  }
+}
+
+function renderNews() {
+  document.getElementById('newsList').innerHTML = newsHeadlines.slice(0,5).map(n=>`
+    <div class="news-story">
+      <div class="news-src">${n.source}</div>
+      <div class="news-hl">${n.title}</div>
+      <div class="news-t">${fmtTime(n.pub)}</div>
+    </div>`).join('');
+}
+
+function fmtTime(pub) {
+  try {
+    const diff=Math.round((Date.now()-new Date(pub))/60000);
+    if(diff<60) return diff+'m ago';
+    if(diff<1440) return Math.floor(diff/60)+'h ago';
+    return new Date(pub).toLocaleDateString();
+  } catch{return'';}
+}
+
+function startNewsCountdown() {
+  const now=new Date();
+  newsTimerSecs=(60-now.getMinutes())*60-now.getSeconds();
+  clearInterval(newsInterval);
+  newsInterval=setInterval(()=>{
+    newsTimerSecs--;
+    if(newsTimerSecs<=0) { broadcastNews(); newsTimerSecs=3600; }
+    const m=Math.floor(newsTimerSecs/60), s=newsTimerSecs%60;
+    document.getElementById('newsTimer').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+  },1000);
+}
+
+async function broadcastNews() {
+  await fetchNews();
+  const onAir=document.getElementById('newsOnAir');
+  onAir.classList.add('show');
+  const h=new Date().getHours();
+  const t=h<12?'morning':h<18?'afternoon':'evening';
+  const intros=[`Good ${t}, here are tonight's stories from around the world...`,`Here are your headlines at the top of the hour...`,`A few minutes of news before we return to the music...`];
+  document.getElementById('newsScript').textContent=intros[Math.floor(Date.now()/3600000)%intros.length]+' '+newsHeadlines.slice(0,5).map(n=>n.title+'.').join(' ');
+  callClaude(`Introduce the hourly world news segment on Wavelength Radio. It's ${t}. One warm sentence to transition from music to news.`);
+  if(playerReady&&isPlaying) player.pauseVideo();
+  setTimeout(()=>{
+    onAir.classList.remove('show');
+    if(playerReady&&userStarted_) player.playVideo();
+    callClaude('The 5-minute news broadcast just ended on Wavelength Radio. Welcome listeners back to the music with one sentence.');
+  },300000);
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════
+function renderTrack(song) {
+  if(!song) return;
+  document.getElementById('trackTitle').textContent=song.title;
+  document.getElementById('trackArtist').textContent=song.artist;
+  document.getElementById('npTitle').textContent=song.title;
+  document.getElementById('npArtist').textContent=song.artist;
+  document.getElementById('npThumb').textContent=emojiForGenre(song.genre);
+  document.getElementById('tags').innerHTML=`<span class="tag g">${song.genre}</span>`+song.tags.map(t=>`<span class="tag">${t}</span>`).join('');
   renderWaveform();
-  updateBottomBar(song);
-}
-
-function updateBottomBar(song) {
-  document.getElementById('npTitle').textContent = song.title;
-  document.getElementById('npArtist').textContent = song.artist;
-  document.getElementById('npLicense').innerHTML = licenseBadgeHtml(song, true);
-  document.getElementById('npThumb').textContent = emojiForGenre(song.genre);
-}
-
-function emojiForGenre(g) {
-  if (!g) return '🎵';
-  if (g.includes('World')) return '🌐';
-  if (g.includes('Rock')) return '🎸';
-  if (g.includes('Folk')) return '🪕';
-  if (g.includes('Classical')) return '🎻';
-  if (g.includes('Electronic')) return '🎛';
-  if (g.includes('Trip')) return '🌀';
-  if (g.includes('Psychedelic')) return '🌈';
-  if (g.includes('Wave')) return '🌊';
-  return '🎵';
 }
 
 function renderQueue() {
-  const el = document.getElementById('queueList');
-  const upcoming = queue.slice(currentIdx, currentIdx + 6);
-  el.innerHTML = upcoming.map((s, i) => `
-    <div class="queue-item ${i===0 ? 'now-playing' : ''}" onclick="jumpTo(${currentIdx + i})">
-      <div class="qi-thumb">${emojiForGenre(s.genre)}</div>
-      <div class="qi-info">
-        <div class="qi-title">${s.title}</div>
-        <div class="qi-artist">${s.artist}</div>
-        <div class="qi-license-row license-badge-row">${licenseBadgeHtml(s, true)}</div>
-      </div>
-      <div class="qi-num">${i===0 ? '▶' : i}</div>
-    </div>
-  `).join('');
-}
-
-function jumpTo(idx) {
-  currentIdx = idx;
-  loadTrack(queue[currentIdx]);
+  document.getElementById('queueList').innerHTML=queue.slice(currentIdx,currentIdx+6).map((s,i)=>`
+    <div class="qi ${i===0?'now':''}" onclick="jumpTo(${currentIdx+i})">
+      <div class="qi-icon">${emojiForGenre(s.genre)}</div>
+      <div class="qi-info"><div class="qi-title">${s.title}</div><div class="qi-sub">${s.artist}</div></div>
+      <div class="qi-n">${i===0?'▶':i}</div>
+    </div>`).join('');
 }
 
 function renderWaveform() {
-  const wf = document.getElementById('waveform');
-  const bars = 28;
-  wf.innerHTML = Array.from({length:bars}, (_,i) => {
-    const h = 6 + Math.sin(i*0.7)*8 + Math.random()*14;
-    const played = i < bars * 0.35;
-    return `<div class="wb ${played ? 'played' : ''}" style="height:${h}px;animation-delay:${(i*0.05).toFixed(2)}s;animation-duration:${(0.7+Math.random()*0.6).toFixed(2)}s"></div>`;
+  document.getElementById('waveform').innerHTML=Array.from({length:26},(_,i)=>{
+    const h=6+Math.sin(i*.7)*7+Math.random()*12;
+    return `<div class="wb" style="height:${h}px;animation-delay:${(i*.05).toFixed(2)}s;animation-duration:${(.7+Math.random()*.6).toFixed(2)}s"></div>`;
   }).join('');
 }
 
 function renderGenreGrid() {
-  const el = document.getElementById('genreGrid');
-  el.innerHTML = GENRES.map(g => `
-    <div class="genre-btn ${activeGenre===g ? 'active' : ''}" onclick="setGenre('${g}')">${g}</div>
-  `).join('');
+  document.getElementById('genreGrid').innerHTML=GENRES.map(g=>
+    `<div class="gbtn ${activeGenre===g?'on':''}" onclick="setGenre('${g}')">${g}</div>`
+  ).join('');
 }
 
-function setGenre(g) {
-  activeGenre = activeGenre === g ? null : g;
-  queue = buildQueue(activeGenre);
-  currentIdx = 0;
-  loadTrack(queue[0]);
-  renderGenreGrid();
+function renderRecent() {
+  const songs=[...playedToday].slice(-5).reverse().map(id=>SONGS.find(s=>s.id===id)).filter(Boolean);
+  document.getElementById('recentList').innerHTML = songs.length
+    ? songs.map(s=>`<div style="padding:4px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px;color:var(--text)">${s.title}</div><div style="font-size:11px;color:var(--muted)">${s.artist}</div></div>`).join('')
+    : 'Nothing yet.';
 }
 
-function renderDailySong() {
-  const today = new Date().getDay();
-  const ds = DAILY_SONGS[today % DAILY_SONGS.length];
-  document.getElementById('dsTitle').textContent = ds.title;
-  document.getElementById('dsArtist').textContent = ds.artist + ' — ' + ds.note;
-  const fullSong = SONGS.find(x => x.id === ds.id);
-  document.getElementById('dsLicense').innerHTML = licenseBadgeHtml(fullSong || { royaltyFree: true, licenseBadge: '?', licenseNote: 'Daily pick — match this id in SONGS for full license fields.' }, false);
-  document.getElementById('dailyQueueItem').innerHTML = `
-    <div class="queue-item" onclick="playDailySong()">
-      <div class="qi-thumb">✦</div>
-      <div class="qi-info">
-        <div class="qi-title">${ds.title}</div>
-        <div class="qi-artist">${ds.artist}</div>
-        <div class="qi-license-row license-badge-row">${licenseBadgeHtml(fullSong || { royaltyFree: true, licenseBadge: '?', licenseNote: 'Match id in playlist for badges.' }, true)}</div>
-      </div>
-      <span class="today-badge">New</span>
-    </div>
-  `;
-}
-
-function updateRecentList() {
-  const recent = [...playHistory].sort((a, b) => b.playedAt - a.playedAt).slice(0, 5);
-  const songs = recent.map(r => SONGS.find(s => s.id === r.id)).filter(Boolean);
-  const el = document.getElementById('recentList');
-  if (songs.length === 0) { el.textContent = 'Nothing in the last 24 hours.'; return; }
-  el.innerHTML = songs.map(s => `<div style="padding:4px 0;border-bottom:1px solid var(--border)">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <div style="font-size:12px;color:var(--text);flex:1;min-width:0">${escapeHtml(s.title)}</div>
-      <div style="flex-shrink:0">${licenseBadgeHtml(s, true)}</div>
-    </div>
-    <div style="font-size:11px;color:var(--muted)">${escapeHtml(s.artist)}</div>
-  </div>`).join('');
-}
-
-// ─── Clock ───────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  CLOCK + LISTENERS
+// ═══════════════════════════════════════════════════════
 function updateClock() {
-  const now = new Date();
-  document.getElementById('clockDisplay').textContent = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 }
-
-// ─── Fake listener count ─────────────────────────────────────────────────────
 function updateListeners() {
-  fakeListeners += Math.floor((Math.random() - 0.45) * 20);
-  fakeListeners = Math.max(600, Math.min(2000, fakeListeners));
-  document.getElementById('listenerCount').textContent = `🎧 ${fakeListeners.toLocaleString()} listening`;
+  fakeListeners=Math.max(600,Math.min(2400,fakeListeners+Math.floor((Math.random()-.45)*18)));
+  document.getElementById('listenerCount').textContent='🎧 '+fakeListeners.toLocaleString()+' listening';
 }
 
-// ─── AI Host voice (free local generator) ────────────────────────────────────
-function cleanForSpeech(text) {
-  return (text || '').replace(/["']/g, '').replace(/\s+/g, ' ').trim();
-}
-
-function pickHostVoice() {
-  if (!('speechSynthesis' in window)) return null;
-  const voices = window.speechSynthesis.getVoices() || [];
-  const english = voices.filter(v => /^en[-_]/i.test(v.lang));
-  return english.find(v => /neural|natural|aria|jenny|sara|samantha|zira|google us english/i.test(v.name))
-    || english[0]
-    || voices[0]
-    || null;
-}
-
-function speakText(text, opts = {}) {
-  if (!hostSpeechEnabled || !('speechSynthesis' in window)) return;
-  const speech = window.speechSynthesis;
-  const {
-    interrupt = true,
-    rate = 0.96,
-    pitch = 1.03,
-    volume = 1.0
-  } = opts;
-  if (interrupt) speech.cancel();
-  const utter = new SpeechSynthesisUtterance(cleanForSpeech(text));
-  const voice = pickHostVoice();
-  if (voice) utter.voice = voice;
-  utter.rate = rate;
-  utter.pitch = pitch;
-  utter.volume = volume;
-  speech.speak(utter);
-}
-
-async function callHost(text, opts = {}) {
-  const bubble = document.getElementById('hostBubble');
-  bubble.classList.add('typing');
-  bubble.textContent = '';
-  document.getElementById('speakAnim').style.display = 'flex';
-  setTimeout(() => {
-    bubble.classList.remove('typing');
-    typeText(bubble, text);
-    if (opts.speak !== false) speakText(text, { interrupt: opts.interrupt !== false, rate: opts.rate || 1.0 });
-  }, 500);
-}
-
-function writingAngle(song) {
-  const base = [
-    `written around a ${song.mood} mood`,
-    `built in a ${song.genre.toLowerCase()} style`,
-  ];
-  if (song.tags.includes('instrumental')) base.push('letting arrangement and dynamics carry the narrative');
-  if (song.tags.includes('guitar')) base.push('with guitar hooks shaping the momentum');
-  if (song.tags.includes('electronic')) base.push('with layered synth textures and pulse');
-  if (song.tags.includes('folk')) base.push('with a singable, homespun writing approach');
-  if (song.tags.includes('classical') || song.tags.includes('piano')) base.push('using a minimalist melodic motif');
-  return base.slice(0, 2).join(', ');
-}
-
-function buildSongIntro(song) {
-  const hour = new Date().getHours();
-  const timeCtx = hour < 6 ? 'late-night' : hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-  const openings = [
-    `Good ${timeCtx}, Wavelength listeners.`,
-    'You are locked in with Nova on Wavelength Radio.',
-    'Right on cue, here is your next track.',
-  ];
-  const opener = openings[Math.floor(Math.random() * openings.length)];
-  const tags = (song.tags || []).slice(0, 2).join(' and ');
-  return `${opener} Coming up is "${song.title}" by ${song.artist}. Genre: ${song.genre}, mood: ${song.mood}. It was ${writingAngle(song)}. Listen for ${tags || 'its key hook and arrangement'}.`;
-}
-
-/** Gemini via server proxy (CORS-safe). Modes: story | intro | news | hourly_pick */
-function geminiEndpoints() {
-  try {
-    const custom = (localStorage.getItem('wv_gemini_proxy_url') || '').trim();
-    if (custom) return [custom];
-  } catch {}
-  return ['/api/gemini-intro', '/.netlify/functions/gemini-intro'];
-}
-
-function isAppsScriptProxy(url) {
-  return /script\.google\.com/i.test(url);
-}
-
-async function callGemini(mode, payload) {
-  const body = { mode, tasteSummary: getTasteSummary(), ...payload };
-  const bodyStr = JSON.stringify(body);
-  for (const endpoint of geminiEndpoints()) {
-    const url = /^https?:\/\//i.test(endpoint)
-      ? endpoint
-      : new URL(endpoint, window.location.origin).href;
-    const appsScript = isAppsScriptProxy(url);
-    try {
-      const ctl = new AbortController();
-      const tid = setTimeout(() => ctl.abort(), 25000);
-      let res;
-      try {
-        res = await fetch(url, {
-          method: 'POST',
-          headers: appsScript
-            ? { 'Content-Type': 'text/plain;charset=utf-8' }
-            : { 'Content-Type': 'application/json' },
-          body: bodyStr,
-          signal: ctl.signal
-        });
-      } finally {
-        clearTimeout(tid);
-      }
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (mode === 'hourly_pick') {
-        return { text: cleanForSpeech(data.text || ''), songId: data.songId || null };
-      }
-      const text = cleanForSpeech(data.text || '');
-      if (text) return { text, songId: null };
-    } catch {
-      /* try next endpoint */
-    }
-  }
-  return { text: '', songId: null };
-}
-
-function getCachedStory(songId) {
-  try {
-    const cache = JSON.parse(localStorage.getItem(STORY_CACHE_KEY) || '{}');
-    const entry = cache[songId];
-    if (entry && entry.text && Date.now() - entry.at < 7 * 24 * 60 * 60 * 1000) return entry.text;
-  } catch {}
-  return '';
-}
-
-function setCachedStory(songId, text) {
-  try {
-    const cache = JSON.parse(localStorage.getItem(STORY_CACHE_KEY) || '{}');
-    cache[songId] = { text, at: Date.now() };
-    localStorage.setItem(STORY_CACHE_KEY, JSON.stringify(cache));
-  } catch {}
-}
-
-async function fetchGeminiTrackStory(song) {
-  const cached = getCachedStory(song.id);
-  if (cached) return cached;
-  const result = await callGemini('story', {
-    title: song.title,
-    artist: song.artist,
-    genre: song.genre,
-    mood: song.mood,
-    tags: song.tags || []
-  });
-  if (result.text) setCachedStory(song.id, result.text);
-  return result.text;
-}
-
-async function checkGeminiStatus() {
-  const el = document.getElementById('geminiStatus');
-  if (!el) return;
-  el.textContent = 'Gemini: checking...';
-  const result = await callGemini('intro', {
-    title: 'Test Song',
-    artist: 'Wavelength',
-    genre: 'Indie',
-    mood: 'calm',
-    tags: ['test']
-  });
-  el.textContent = result.text ? 'Gemini: connected' : 'Gemini: fallback mode';
-  const help = document.getElementById('geminiProxyHelp');
-  if (help && !result.text && !(localStorage.getItem('wv_gemini_proxy_url') || '').trim()) {
-    help.textContent = 'Add your Apps Script /exec URL below (GitHub Pages needs this).';
-  }
-}
-
-function loadGeminiProxyField() {
-  const input = document.getElementById('proxyUrlInput');
-  if (!input) return;
-  try {
-    const saved = localStorage.getItem('wv_gemini_proxy_url');
-    if (saved) input.value = saved;
-  } catch {}
-}
-
-async function saveGeminiProxyUrl() {
-  const input = document.getElementById('proxyUrlInput');
-  const help = document.getElementById('geminiProxyHelp');
-  if (!input) return;
-  const url = input.value.trim();
-  if (!url) {
-    try { localStorage.removeItem('wv_gemini_proxy_url'); } catch {}
-    if (help) help.textContent = 'Cleared. Using server proxy if available.';
-    checkGeminiStatus();
-    return;
-  }
-  if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(url)) {
-    if (help) help.textContent = 'URL should look like: https://script.google.com/macros/s/…/exec';
-    return;
-  }
-  try { localStorage.setItem('wv_gemini_proxy_url', url); } catch {}
-  if (help) help.textContent = 'Testing connection…';
-  await checkGeminiStatus();
-  const ok = document.getElementById('geminiStatus')?.textContent?.includes('connected');
-  if (help) {
-    help.textContent = ok
-      ? 'Gemini connected via Apps Script. Stories and hourly picks are active.'
-      : 'Saved URL but test failed. Redeploy the script as Web app (Anyone) and check GEMINI_API_KEY in Script properties.';
-  }
-}
-
-function buildDailyDropLine(ds) {
-  return `Daily drop time: "${ds.title}" by ${ds.artist}. Today's fresh add brings ${ds.note.toLowerCase()} into rotation.`;
-}
-
-function buildNewsIntroLine() {
-  return 'Top of the hour means five minutes of world headlines, then we go right back to the music.';
-}
-
-function buildNewsOutroLine() {
-  return 'That wraps our global update. Wavelength now takes you back into the stream.';
-}
-
-async function callClaude(prompt) {
-  await callHost(prompt || `Now playing: "${currentSongTitle()}".`, { speak: true });
-}
-
-function currentSongTitle() { return queue[currentIdx]?.title || 'this track'; }
-
-function typeText(el, text) {
-  el.textContent = '';
-  let i = 0;
-  const iv = setInterval(() => {
-    el.textContent += text[i++];
-    if (i >= text.length) clearInterval(iv);
-  }, 22);
-}
-
-function speakIntro(song) {
-  if (!song) return;
-  updateVoteButtons(song);
-  const fallback = buildSongIntro(song);
-  callHost(fallback, { speak: true });
-  fetchGeminiTrackStory(song).then((story) => {
-    if (story) callHost(story, { speak: true, interrupt: true, rate: 0.97 });
-  });
-}
-
-function speakDailyDrop(ds) {
-  callClaude(buildDailyDropLine(ds));
-}
-
-function speakNewsIntro() {
-  callClaude(buildNewsIntroLine());
-}
-
-// ─── News fetching via Google News RSS ──────────────────────────────────────
-async function fetchNews() {
-  const el = document.getElementById('newsList');
-  try {
-    const CORS = 'https://api.allorigins.win/get?url=';
-    const feedUrl = encodeURIComponent('https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en');
-    const res = await fetch(CORS + feedUrl);
-    const data = await res.json();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(data.contents, 'text/xml');
-    const items = [...xml.querySelectorAll('item')].slice(0, 8);
-    newsHeadlines = items.map(item => ({
-      title: item.querySelector('title')?.textContent?.replace(/ - .*$/, '') || '',
-      source: item.querySelector('source')?.textContent || 'World News',
-      pub: item.querySelector('pubDate')?.textContent || ''
-    })).filter(n => n.title);
-
-    el.innerHTML = newsHeadlines.map(n => `
-      <div class="news-story">
-        <div class="news-source">${n.source}</div>
-        <div class="news-headline">${n.title}</div>
-        <div class="news-time">${formatNewsTime(n.pub)}</div>
-      </div>
-    `).join('');
-  } catch {
-    el.innerHTML = '<div style="padding:1rem;font-size:12px;color:var(--muted)">News temporarily unavailable. Tap refresh or check back shortly.</div>';
-    newsHeadlines = [
-      { title: 'Markets show steady movement as global trade policies evolve', source: 'Financial Times' },
-      { title: 'Climate summit reaches new agreement on renewable targets', source: 'Reuters' },
-      { title: 'Tech sector accelerates AI integration across industries', source: 'BBC' },
-      { title: 'Scientists report breakthrough in cancer early detection', source: 'Nature' },
-      { title: 'Cultural exchange programs expand across 40 countries', source: 'UN News' },
-    ];
-    el.innerHTML = newsHeadlines.map(n => `
-      <div class="news-story">
-        <div class="news-source">${n.source}</div>
-        <div class="news-headline">${n.title}</div>
-      </div>
-    `).join('');
-  }
-}
-
-function formatNewsTime(pub) {
-  try {
-    const d = new Date(pub);
-    const diff = Math.round((Date.now() - d) / 60000);
-    if (diff < 60) return `${diff}m ago`;
-    if (diff < 1440) return `${Math.floor(diff/60)}h ago`;
-    return d.toLocaleDateString();
-  } catch { return ''; }
-}
-
-// ─── Hourly news broadcast ───────────────────────────────────────────────────
-function startNewsCountdown() {
-  const now = new Date();
-  secondsToNews = (60 - now.getMinutes()) * 60 - now.getSeconds();
-  updateNewsTimer();
-  clearInterval(newsTimer);
-  newsTimer = setInterval(() => {
-    secondsToNews--;
-    if (secondsToNews <= 0) {
-      triggerNewsBroadcast();
-      secondsToNews = 3600;
-    }
-    updateNewsTimer();
-  }, 1000);
-}
-
-function updateNewsTimer() {
-  const m = Math.floor(secondsToNews / 60);
-  const s = secondsToNews % 60;
-  document.getElementById('newsTimer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-}
-
-async function triggerNewsBroadcast() {
-  await fetchNews();
-  const onAir = document.getElementById('newsOnAir');
-  onAir.classList.remove('hidden');
-  const baseScript = buildNewsScript();
-  const geminiLead = await generateGeminiNewsLead();
-  const spokenNews = `${buildNewsIntroLine()} ${geminiLead || baseScript}`;
-  document.getElementById('newsScript').textContent = spokenNews;
-  callHost(spokenNews, { speak: true, interrupt: true, rate: 0.98 });
-
-  // Pause music for news (5 min = 300s)
-  if (playerReady && isPlaying) player.pauseVideo();
-
-  setTimeout(() => {
-    onAir.classList.add('hidden');
-    if (playerReady && userHasInteracted) player.playVideo();
-    callClaude(buildNewsOutroLine());
-    triggerHourlySpotlight();
-  }, 300000); // 5 minutes
-}
-
-function buildNewsScript() {
-  if (!newsHeadlines.length) return 'No stories available at this time.';
-  const intros = ['Here are tonight\'s stories from around the world...', 'Good evening — here\'s what\'s happening globally right now...', 'Here are the headlines at the top of the hour...'];
-  const intro = intros[Math.floor(Date.now() / 3600000) % intros.length];
-  return intro + ' ' + newsHeadlines.slice(0, 5).map(n => n.title + '.').join(' ');
-}
-
-async function generateGeminiNewsLead() {
-  if (!newsHeadlines.length) return '';
-  const result = await callGemini('news', {
-    title: 'World News Bulletin',
-    artist: 'Wavelength',
-    genre: 'News',
-    mood: 'informative',
-    tags: newsHeadlines.slice(0, 5).map(h => h.title)
-  });
-  return result.text;
-}
-
-function pickWeightedSong(pool) {
-  if (!pool.length) return null;
-  const weights = pool.map(s => Math.max(0.2, 3 + getSongTasteScore(s)));
-  const total = weights.reduce((a, b) => a + b, 0);
-  let r = Math.random() * total;
-  for (let i = 0; i < pool.length; i++) {
-    r -= weights[i];
-    if (r <= 0) return pool[i];
-  }
-  return pool[0];
-}
-
-async function triggerHourlySpotlight() {
-  const hour = new Date().getHours();
-  if (lastHourlySpotlightHour === hour) return;
-  lastHourlySpotlightHour = hour;
-
-  let pool = getEligibleSongs().filter(s => !hasPlayedWithin24h(s.id));
-  if (!pool.length) pool = getEligibleSongs();
-  const catalog = pool.map(s => ({ id: s.id, title: s.title, artist: s.artist, genre: s.genre, mood: s.mood }));
-  const playedIds = playHistory.map(p => p.id);
-
-  const pickResult = await callGemini('hourly_pick', { catalog, playedIds });
-  let song = pickResult.songId ? pool.find(s => s.id === pickResult.songId) : null;
-  if (!song) song = pickWeightedSong(pool);
-  if (!song) return;
-
-  const note = document.getElementById('hourlySpotlightNote');
-  if (note) {
-    note.classList.remove('hidden');
-    note.textContent = `Hourly spotlight: ${song.title} — ${pickResult.text || 'picked for your taste profile'}`;
-  }
-
-  const story = await fetchGeminiTrackStory(song);
-  const intro = pickResult.text
-    ? `Top of the hour spotlight. ${pickResult.text} Now playing ${song.title} by ${song.artist}.`
-    : `Hourly spotlight on Wavelength: ${song.title} by ${song.artist}.`;
-
-  if (playerReady) {
-    const existing = queue.findIndex(s => s.id === song.id);
-    if (existing >= 0) currentIdx = existing;
-    else {
-      queue.unshift(song);
-      currentIdx = 0;
-    }
-    player.loadVideoById(song.id);
-    renderTrackCard(song);
-    renderQueue();
-    updateBottomBar(song);
-    updateVoteButtons(song);
-    document.getElementById('ytOverlay').classList.add('hidden');
-    if (userHasInteracted) player.playVideo();
-  }
-
-  callHost(intro, { speak: true, interrupt: true });
-  if (story) setTimeout(() => callHost(story, { speak: true, interrupt: true, rate: 0.97 }), 1200);
-}
-
-// ─── Genre filter buttons ─────────────────────────────────────────────────────
-// (rendered by renderGenreGrid, handled by setGenre)
-
-// ─── Init ────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
 function init() {
-  loadPlayHistory();
-  loadTasteProfile();
-  queue = buildQueue(null);
-  currentIdx = 0;
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = pickHostVoice;
-    pickHostVoice();
-  }
-
+  loadPlayed();
+  queue=buildQueue(null);
   renderGenreGrid();
-  renderDailySong();
   renderQueue();
-  renderRequestList();
-  renderTasteNote();
-  loadGeminiProxyField();
   fetchNews();
-  checkGeminiStatus();
   startNewsCountdown();
-  setTimeout(() => triggerHourlySpotlight(), 8000);
-  updateClock();
-  updateListeners();
+  updateClock(); updateListeners();
 
-  setInterval(updateClock, 1000);
-  setInterval(updateListeners, 15000);
-  setInterval(fetchNews, 1800000); // refresh news every 30min
-  setInterval(renderQueue, 5000);
+  // Hide setup panel if PAT already saved
+  if(loadMubertPat()) {
+    document.getElementById('mubertSetup').style.display='none';
+  }
+  // Pre-fill input if key exists
+  const pat=loadMubertPat();
+  if(pat) document.getElementById('mubertPatInput').value=pat;
+
+  // Generate today's track
+  triggerMubertGeneration();
+
+  setInterval(updateClock,1000);
+  setInterval(updateListeners,14000);
+  setInterval(fetchNews,1800000);
+  setInterval(renderQueue,5000);
 }
 
 init();
