@@ -7,7 +7,7 @@
 <style>
   :root {
     --bg:#0e0e12; --surface:#16161e; --surface2:#1e1e2a;
-    --border:#2a2a3a; --accent:#7c5cfc; --accent2:#e879f9;
+    --border:#2a2a3a; --accent:#7c5cfc; --accent2:#eh879f9;
     --text:#e8e6f0; --muted:#7a7890; --news:#f87171;
     --green:#34d399; --amber:#fbbf24;
     --font:'Segoe UI',system-ui,sans-serif;
@@ -288,13 +288,13 @@ const SONGS = [
   {id:'WbN0nX61rIs',title:'Shake It Out',         artist:'Florence + The Machine',       genre:'Indie Folk',      mood:'cathartic', tags:['indie','powerful']},
   {id:'zBkd2MJrvPk',title:'Home',                 artist:'Edward Sharpe & The Magnetic Zeros',genre:'Indie Folk', mood:'joyful',   tags:['folk','happy']},
   {id:'jOfxnKbsm4U',title:'Ho Hey',               artist:'The Lumineers',                genre:'Indie Folk',      mood:'sing-along',tags:['folk','anthem']},
-  {id:'qdlt1-vVEjM',title:'Dancing On My Own',    artist:'Robyn',                        genre:'Indie Pop',       mood:'bittersweet',tags:['pop','sad-dance']},
+  {id:'mySPFpb1iuM',title:'Dancing On My Own',    artist:'Robyn',                        genre:'Indie Pop',       mood:'bittersweet',tags:['pop','sad-dance']},
   {id:'DfFiSZxHvBQ',title:'New Slang',            artist:'The Shins',                    genre:'Indie Pop',       mood:'gentle',    tags:['indie-pop','acoustic']},
   {id:'UOPy9YCBVF4',title:'Caring Is Creepy',     artist:'The Shins',                    genre:'Indie Pop',       mood:'wistful',   tags:['indie','guitar']},
   {id:'U8BKRXqtLaE',title:'Such Great Heights',   artist:'The Postal Service',           genre:'Indie Electronic',mood:'hopeful',   tags:['electronic','love']},
   {id:'mOckHobbeWE',title:'Brand New Colony',     artist:'The Postal Service',           genre:'Indie Electronic',mood:'playful',   tags:['electronic','indie-pop']},
-  {id:'WLFXhWb7qSE',title:'Konichiwa Bitches',    artist:'Robyn',                        genre:'Indie Pop',       mood:'fierce',    tags:['pop','dance']},
-  {id:'NpATNUAFGzQ',title:'Gone for Good',        artist:'The Shins',                    genre:'Indie Pop',       mood:'reflective',tags:['indie','alternative']},
+  {id:'2jHQS5DNMfI',title:'Konichiwa Bitches',    artist:'Robyn',                        genre:'Indie Pop',       mood:'fierce',    tags:['pop','dance']},
+  {id:'nV44VW0EpCk',title:'Gone for Good',        artist:'The Shins',                    genre:'Indie Pop',       mood:'reflective',tags:['indie','alternative']},
   {id:'GFelVEgpQ-E',title:'Cosmic Love',          artist:'Florence + The Machine',       genre:'Indie Folk',      mood:'ethereal',  tags:['indie','dramatic']},
   {id:'3G0VLlcfSfo',title:'Dashboard',            artist:'Modest Mouse',                 genre:'Indie Rock',      mood:'energetic', tags:['indie','upbeat']},
   {id:'8iefU0aJBKA',title:'Atlas Air',            artist:'Massive Attack',               genre:'Trip Hop',        mood:'atmospheric',tags:['electronic','dark']},
@@ -439,7 +439,7 @@ function onYouTubeIframeAPIReady() {
     height:'100%', width:'100%',
     videoId: queue[0]?.id||SONGS[0].id,
     playerVars:{autoplay:0,controls:1,rel:0,modestbranding:1,enablejsapi:1},
-    events:{onReady:onPReady, onStateChange:onPState}
+    events:{onReady:onPReady, onStateChange:onPState, onError:onPError}
   });
 }
 function onPReady() {
@@ -448,16 +448,20 @@ function onPReady() {
   speakIntro(queue[0]);
 }
 function onPState(e) {
-  if(e.data===YT.PlayerState.PLAYING) {
-    isPlaying=true; setPlayIcon(true);
-    document.getElementById('ytOverlay').classList.add('hidden');
-    startProg();
-    renderRecent();
-  } else if(e.data===YT.PlayerState.PAUSED) {
-    isPlaying=false; setPlayIcon(false);
-  } else if(e.data===YT.PlayerState.ENDED) {
-    nextTrack();
-  }
+if(e.data===YT.PlayerState.PLAYING) {
+isPlaying=true; setPlayIcon(true);
+document.getElementById('ytOverlay').classList.add('hidden');
+startProg();
+renderRecent();
+} else if(e.data===YT.PlayerState.PAUSED) {
+isPlaying=false; setPlayIcon(false);
+} else if(e.data===YT.PlayerState.ENDED) {
+nextTrack();
+}
+}
+function onPError(e) {
+console.warn('[YT Error] code:',e.data,'skipping to next track');
+setTimeout(nextTrack, 800);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -654,42 +658,34 @@ function playDaily() {
 //  AI HOST (Nova) via Anthropic API
 // ═══════════════════════════════════════════════════════
 async function callClaude(prompt) {
-  const bubble = document.getElementById('hostBubble');
-  document.getElementById('speakAnim').style.display='flex';
-  bubble.textContent='';
-  const cursor = document.createElement('span');
-  cursor.textContent='●●●'; cursor.style.cssText='font-size:9px;color:var(--muted)';
-  cursor.animate([{opacity:.3},{opacity:1},{opacity:.3}],{duration:1000,iterations:Infinity});
-  bubble.appendChild(cursor);
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:160,
-        system:`You are Nova, AI host of Wavelength Radio — a free indie music station.
-Style: warm, curious, poetic but brief. Like a knowledgeable friend who loves music.
-2-3 sentences max. No hashtags, no emojis, no stage directions. Always direct, never corporate.`,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text||'';
-    bubble.textContent='';
-    typeText(bubble, text);
-  } catch {
-    bubble.textContent='';
-    const fallbacks=[
-      `Here's "${queue[currentIdx]?.title||'this track'}" — one of those songs that gets better every listen.`,
-      `Wavelength Radio, keeping the signal steady. This one's worth your full attention.`,
-      `Good music doesn't need an introduction. But here's one anyway.`,
-      `Something quiet and true is about to play.`,
-    ];
-    typeText(bubble, fallbacks[Math.floor(Math.random()*fallbacks.length)]);
-  }
+const bubble = document.getElementById('hostBubble');
+document.getElementById('speakAnim').style.display='flex';
+bubble.textContent='';
+const cursor = document.createElement('span');
+cursor.textContent='●●●'; cursor.style.cssText='font-size:9px;color:var(--muted)';
+cursor.animate([{opacity:.3},{opacity:1},{opacity:.3}],{duration:1000,iterations:Infinity});
+bubble.appendChild(cursor);
+try {
+const res = await fetch('/api/gemini-intro', {
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({prompt})
+});
+const data = await res.json();
+const text = data.text||'';
+bubble.textContent='';
+if(text) { typeText(bubble, text); } else { throw new Error('empty response'); }
+} catch {
+bubble.textContent='';
+const fallbacks=[
+'Here is one of those songs that gets better every listen.',
+'Wavelength Radio, keeping the signal steady. This one is worth your full attention.',
+'Good music does not need an introduction. But here is one anyway.',
+'Something quiet and true is about to play.',
+];
+typeText(bubble, fallbacks[Math.floor(Math.random()*fallbacks.length)]);
 }
-
+}
 function typeText(el, text) {
   let i=0;
   const iv=setInterval(()=>{ el.textContent+=text[i++]; if(i>=text.length) clearInterval(iv); },20);
